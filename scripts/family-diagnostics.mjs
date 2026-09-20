@@ -7,6 +7,8 @@ const reports = [
   'jankurai/agent/baselines/main.repo-score.json',
   'jankurai/.jankurai/repo-score.json', 'jankurai/.jankurai/repo-score.md',
   'jankurai/target/jankurai/repo-score.json', 'jankurai/target/jankurai/repo-score.md',
+  'jankurai/target/jankurai/conformance.json', 'jankurai/target/jankurai/conformance.md',
+  'jankurai/target/jankurai/conformance.tex',
   'jankurai/target/jankurai/auditor.sha256', 'jankurai/target/jankurai/auditor-reports.sha256',
 ];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
