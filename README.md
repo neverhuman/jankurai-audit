@@ -18,6 +18,8 @@ repair queue. It does not execute repository commands.
 
 ![Jankurai audit](docs/demo/audit-readme.gif)
 
+Open the [1920×1080 full-resolution GIF](docs/demo/audit-1080p.gif).
+
 ## Install
 
 Linux x86-64 and Apple Silicon macOS:
