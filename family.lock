@@ -23,8 +23,8 @@ commit = "8d14132893934e545344be62c38b8d70394c0afa"
 
 [[repo]]
 repo = "jankurai-conformance"
-tag = "ci-61ffa462f8aa8b0d69bd04223c5b688a535b58ed"
-commit = "61ffa462f8aa8b0d69bd04223c5b688a535b58ed"
+tag = "ci-632d68d3f82196faba3d20c071234b20ce3ea38e"
+commit = "632d68d3f82196faba3d20c071234b20ce3ea38e"
 
 [[repo]]
 repo = "jankurai-paper"

@@ -11,7 +11,7 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 ### Changed
 
 - Public release is `1.7.1`. `jankurai`, `tuiwright`, and `@jankurai/ux-qa` report that version. Standard `0.9.0` and schema `1.9.0` are unchanged.
-- `family.lock` pins core `0e2c573`, kernel `cd94f46`, Tuiwright `ad47d01`, and UX `00e71d1`.
+- `family.lock` pins core `0e2c573`, kernel `cd94f46`, Tuiwright `ad47d01`, UX `00e71d1`, and conformance `632d68d`. The conformance pin matches the witness rule that an imported receipt is not trusted execution.
 - README states what the 91/100 hub badge covers: the stored ratchet of
   `fb97e59`, the hub tree only, with `.fusion/` excluded. Member product code
   is scored in each member repository.
