@@ -2,7 +2,9 @@
 
 ## Supported Versions
 
-Jankurai is pre-1.0. Security fixes are targeted at the current `main` branch and the latest published source release, when one exists. Older snapshots are supported only when maintainers explicitly mark them in release notes.
+Security fixes target `main` and the latest published release, currently
+[v1.7.0](https://github.com/neverhuman/jankurai/releases/tag/v1.7.0). Older
+snapshots are supported only when maintainers explicitly mark them in release notes.
 
 ## Private Reporting
 
