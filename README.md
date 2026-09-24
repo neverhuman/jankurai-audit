@@ -14,7 +14,7 @@ and the integration job is what builds the fused auditor. The check is static
 policy and structure. Application pentests, cloud IAM, Terraform or Kubernetes
 posture, and runtime authorization are outside it.
 
-[**Current release v1.7.0**](https://github.com/neverhuman/jankurai/releases/tag/v1.7.0)
+[**Current release v1.7.1**](https://github.com/neverhuman/jankurai/releases/tag/v1.7.1)
 · [CI](https://github.com/neverhuman/jankurai/actions/workflows/ci.yml)
 · [Install](docs/install.md)
 · [AGENTS.md](AGENTS.md)
@@ -38,16 +38,18 @@ Open the [1920×1080 full-resolution GIF](docs/demo/audit-1080p.gif).
 | Standard, contracts, conformance, paper, deploy | their own repositories | Doctrine, schemas, fixtures, paper, deploy notes |
 
 Detail: [docs/architecture.md](docs/architecture.md).
+The locked auditor's rule catalog is
+[docs/rule-catalog.md at 0e2c573](https://github.com/neverhuman/jankurai-core/blob/0e2c573ad2f2fe427a2a1227fac86c1435852a45/docs/rule-catalog.md).
 
 ## Install
 
 Linux x86-64 and Apple Silicon macOS:
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.0/jankurai-installer.sh | bash -s -- --tag v1.7.0'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.1/jankurai-installer.sh | bash -s -- --tag v1.7.1'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
-# jankurai 1.7.0
+# jankurai 1.7.1
 jankurai audit .
 ```
 
@@ -56,8 +58,8 @@ embedded provenance, then runs the staged binary before replacing an existing
 install. Native Windows, Intel macOS, Linux ARM64, and Alpine/musl are not
 supported.
 
-Repo bootstrap (`init`, pre-commit on the diff, `upgrade`) ships in the next
-CLI release. Until then, install with the command above and audit locally or in CI.
+`v1.7.1` includes `jankurai init`, a pre-commit that runs `diff-audit`, and
+`jankurai upgrade`. Install with the command above and audit locally or in CI.
 
 ## GitHub Action
 
@@ -72,7 +74,7 @@ of 85. Leave `plan` empty.
 - uses: neverhuman/jankurai-action@4a45526ac904315f96e6bbebda4e088268023afa
   id: quality
   with:
-    release-tag: v1.7.0
+    release-tag: v1.7.1
     fail-under: '85'
 - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
   if: always()

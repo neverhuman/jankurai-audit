@@ -1,16 +1,16 @@
 # Install Jankurai
 
 The current published release is
-[v1.7.0](https://github.com/neverhuman/jankurai/releases/tag/v1.7.0).
+[v1.7.1](https://github.com/neverhuman/jankurai/releases/tag/v1.7.1).
 It provides native Linux x86-64 and Apple Silicon macOS binaries.
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.0/jankurai-installer.sh | bash -s -- --tag v1.7.0'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.1/jankurai-installer.sh | bash -s -- --tag v1.7.1'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
 ```
 
-The result is `jankurai 1.7.0`. The default directory is `~/.local/bin`; add the
+The result is `jankurai 1.7.1`. The default directory is `~/.local/bin`; add the
 PATH line to `~/.bashrc` or `~/.zshrc` if needed. Pass `--install-dir /your/bin`
 to select a different writable directory. No sudo, Rust, Node.js, GitHub login,
 or preinstalled verifier is needed for the auditor or Tuiwright. The platform
@@ -56,16 +56,16 @@ authorization.
 ## Tuiwright
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.0/jankurai-installer.sh | bash -s -- --tag v1.7.0 --product tuiwright'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.1/jankurai-installer.sh | bash -s -- --tag v1.7.1 --product tuiwright'
 tuiwright --version
 ```
 
-Expected: `tuiwright 1.7.0`. Remove it with
+Expected: `tuiwright 1.7.1`. Remove it with
 `rm ~/.local/bin/tuiwright`.
 
 ## UX package
 
-The built `jankurai-ux-qa-1.7.0.tgz` is attached to the release. Browser auditing
+The built `jankurai-ux-qa-1.7.1.tgz` is attached to the release. Browser auditing
 requires Node.js 24, npm, Playwright 1.59.1, and Chromium. This optional package's
 manual verification uses [GitHub CLI 2.100.0](https://github.com/cli/cli/releases/tag/v2.100.0),
 [cosign 3.1.3](https://github.com/sigstore/cosign/releases/tag/v3.1.3), and
@@ -79,8 +79,8 @@ provenance describes the workflow that built the platform-independent npm asset:
 ```bash
 set -euo pipefail
 repo=neverhuman/jankurai
-tag=v1.7.0
-package=jankurai-ux-qa-1.7.0.tgz
+tag=v1.7.1
+package=jankurai-ux-qa-1.7.1.tgz
 provenance=provenance-x86_64-unknown-linux-gnu.json
 identity="https://github.com/$repo/.github/workflows/release.yml@refs/tags/$tag"
 for file in "$package" "$provenance"; do
@@ -107,13 +107,13 @@ done
 Only after every verification command succeeds:
 
 ```sh
-npm install -g ./jankurai-ux-qa-1.7.0.tgz playwright@1.59.1
+npm install -g ./jankurai-ux-qa-1.7.1.tgz playwright@1.59.1
 npx playwright@1.59.1 install chromium
 jankurai-ux-qa --version
 jankurai-ux-qa audit --url https://example.com --out ux-report.json
 ```
 
-Expected: `jankurai-ux-qa 1.7.0`. Remove it with
+Expected: `jankurai-ux-qa 1.7.1`. Remove it with
 `npm uninstall -g @jankurai/ux-qa`; remove Playwright separately if unused.
 
 ## Verification and source builds
