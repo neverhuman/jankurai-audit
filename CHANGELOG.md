@@ -6,18 +6,22 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+## 1.7.1 - 2026-09-24
+
 ### Changed
 
+- Public release is `1.7.1`. `jankurai`, `tuiwright`, and `@jankurai/ux-qa` report that version. Standard `0.9.0` and schema `1.9.0` are unchanged.
+- `family.lock` pins core `0e2c573`, kernel `cd94f46`, Tuiwright `ad47d01`, UX `00e71d1`, and conformance `632d68d`. The conformance pin matches the witness rule that an imported receipt is not trusted execution.
 - README states what the 91/100 hub badge covers: the stored ratchet of
   `fb97e59`, the hub tree only, with `.fusion/` excluded. Member product code
   is scored in each member repository.
 - README routes readers to the hub, `jankurai-core`, `jankurai-action`, and the
-  tools repositories, and pins `neverhuman/jankurai-action@4a45526` with
-  `release-tag: v1.7.0`.
+  tools repositories, and links the locked rule catalog.
 - Install and Action docs state that `diff-audit` is the local pre-PR path, the
   Action remains a full audit, and pentests, cloud IAM, infrastructure posture,
   and runtime authorization are outside the auditor.
-- Supported-version text names the published `v1.7.0` release.
+- The hub Action `release-tag` default is `v1.7.1`. The `v1.7.0` tag is unchanged.
+- Native Windows, Intel macOS, Linux ARM64, and musl remain unsupported.
 
 ## 1.7.0 - 2026-09-09
 

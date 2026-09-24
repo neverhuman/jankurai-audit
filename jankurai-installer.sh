@@ -3,7 +3,7 @@
 set -euo pipefail
 fail() { printf 'installer: %s\n' "$*" >&2; exit 1; }
 repo="${JANKURAI_RELEASE_REPO:-neverhuman/jankurai}"
-tag="${JANKURAI_RELEASE_TAG:-v1.7.0}"
+tag="${JANKURAI_RELEASE_TAG:-v1.7.1}"
 install_dir="${JANKURAI_INSTALL_DIR:-$HOME/.local/bin}"
 product=jankurai
 verify_only=false
@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
     --assets-dir) assets_dir="${2:?missing asset directory}"; shift 2 ;;
     --verify-only) verify_only=true; shift ;;
     --print-asset-name) print_asset=true; shift ;;
-    --help|-h) printf 'usage: jankurai-installer.sh [--tag v1.7.0] [--product jankurai|tuiwright] [--repo owner/repo] [--install-dir path] [--verify-only] [--print-asset-name] [--assets-dir path]\n'; exit 0 ;;
+    --help|-h) printf 'usage: jankurai-installer.sh [--tag v1.7.1] [--product jankurai|tuiwright] [--repo owner/repo] [--install-dir path] [--verify-only] [--print-asset-name] [--assets-dir path]\n'; exit 0 ;;
     *) fail "unknown argument: $1" ;;
   esac
 done
