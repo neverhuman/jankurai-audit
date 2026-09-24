@@ -5,9 +5,13 @@ The proposed Action uses a full fresh audit and an additional score floor of
 hard failures, ratchet failures, and any nonzero auditor exit. `fail-under: 0`
 removes only the additional Action floor. It does not disable audit policy.
 
-This interface is unreleased. The immutable `neverhuman/jankurai@v1.7.0`
-Action has no `fail-under` or `path` input. Do not retag it. Publish a supported
-consumer example only after a later exact Action ref passes hosted tests.
+`fail-under` and `path` are supported inputs on
+`neverhuman/jankurai-action` at and after `4a45526`. The auditor that pin
+installs is still the `v1.7.0` binary until `v1.7.1` is promoted. The immutable
+`neverhuman/jankurai@v1.7.0` Action has no `fail-under` or `path` input. Do not
+retag it. The hosted `public-audit` and `public-positive` jobs on
+`jankurai-action` are the consumer evidence for this wrapper, and they must be
+re-run with `release-tag: v1.7.1` after that release is promoted.
 The installer continues to verify the explicitly selected auditor release.
 
 The Action returns `report-json`, `report-md`, and `report-directory` paths

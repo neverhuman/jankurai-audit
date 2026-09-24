@@ -41,6 +41,18 @@ written explicitly. Advisory mode emits findings for review. Ratchet mode additi
 also takes a baseline and applies release policy. Use `jankurai audit --help`
 for the available policy and output options.
 
+For a pre-commit or pre-PR pass over the files you touched:
+
+```sh
+jankurai diff-audit --base-ref origin/main
+```
+
+`diff-audit` is the local speed path. The GitHub Action stays a full-repository
+audit. A diff report is not the evidence behind the README badge. The auditor
+checks static policy and structure. It does not run an application pentest, and
+it does not review cloud IAM, Terraform or Kubernetes posture, or runtime
+authorization.
+
 ## Tuiwright
 
 ```sh

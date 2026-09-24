@@ -6,6 +6,19 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+### Changed
+
+- README states what the 91/100 hub badge covers: the stored ratchet of
+  `fb97e59`, the hub tree only, with `.fusion/` excluded. Member product code
+  is scored in each member repository.
+- README routes readers to the hub, `jankurai-core`, `jankurai-action`, and the
+  tools repositories, and pins `neverhuman/jankurai-action@4a45526` with
+  `release-tag: v1.7.0`.
+- Install and Action docs state that `diff-audit` is the local pre-PR path, the
+  Action remains a full audit, and pentests, cloud IAM, infrastructure posture,
+  and runtime authorization are outside the auditor.
+- Supported-version text names the published `v1.7.0` release.
+
 ## 1.7.0 - 2026-09-09
 
 First GitHub-primary split-family release. Signed Linux x86-64 and Apple Silicon
