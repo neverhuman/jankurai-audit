@@ -32,10 +32,11 @@ Repository audit reports remain yours to retain or remove separately.
 Run this from the repository you want to inspect:
 
 ```sh
-jankurai audit . --mode advisory --json target/jankurai/repo-score.json --md target/jankurai/repo-score.md --repair-queue-jsonl target/jankurai/repair-queue.jsonl
+jankurai audit .
 ```
 
-Advisory mode emits findings for review. Ratchet mode additionally takes
+Add `--json`, `--md`, and `--repair-queue-jsonl` when you want those files
+written explicitly. Advisory mode emits findings for review. Ratchet mode additionally takes
 `--baseline path/to/accepted-score.json` and rejects regressions. Release mode
 also takes a baseline and applies release policy. Use `jankurai audit --help`
 for the available policy and output options.
