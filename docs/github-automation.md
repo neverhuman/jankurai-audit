@@ -40,11 +40,42 @@ is used only outside that process to select eligible revisions.
 Publication parses bounded lock artifacts and writes Git blobs through the API;
 it never checks out or executes candidate component code with that token.
 
-The supplied token expires **October 8, 2026**. Rotate it before that date by
-updating the hub repository secret and `FAMILY_AUTOMATION_TOKEN_EXPIRES` variable.
-The hourly rotation job fails with an annotation starting 14 days before expiry,
-so the required action is visible in Actions. After rotation, dispatch the
-updater and verify PR CI, protected merge, and post-merge CI.
+The supplied token expires **October 8, 2026**. As of 2026-09-25 the hourly
+`rotation` job is red because 14 or fewer days remain. That failure is the
+closed path. Do not clear it by raising the 14-day threshold, deleting the
+job, or writing a later date than the new token actually expires.
+The check still fails when the remaining whole days are 14 or fewer. A missing,
+unpadded, or impossible date fails closed and is not replaced with
+`2026-10-08`.
+
+Maintainer rotation, in order:
+
+1. Create a new personal access token for the same GitHub user that opens
+   `automation/family-*` pull requests. The merge job trusts only that user's
+   login. The token needs to read check runs on the locked family repositories
+   and, on `neverhuman/jankurai` only, create blobs, trees, commits, and
+   branches, open pull requests, and squash-merge them. Do not grant it to
+   other repositories' secrets.
+2. Copy the token's real expiry as `YYYY-MM-DD`. A fine-grained token's
+   settings page shows that date. Do not round it forward.
+3. On `neverhuman/jankurai`, open Settings, then Secrets and variables,
+   then Actions. Replace the secret `FAMILY_AUTOMATION_TOKEN` with the new
+   token. Set the repository variable `FAMILY_AUTOMATION_TOKEN_EXPIRES` to
+   that same `YYYY-MM-DD`. The variable is not proof of rotation by itself.
+4. Revoke the previous token after the new secret is saved. Do not paste the
+   token into the repository, the variable, a workflow log, or this document.
+5. Run `family-update` with `workflow_dispatch`. `rotation` must print
+   `FAMILY_AUTOMATION_TOKEN rotation due <date>` and exit 0. `collect` then
+   runs. If it opens a pull request, the diff may contain only `family.lock`
+   and `Cargo.lock`. Wait for `jankurai/required` on that head. The later
+   hourly merge job squashes it only when those gates pass.
+6. Finish before 2026-10-08. After that date a still-valid-looking variable
+   of `2026-10-08` keeps the job red, which is the intended result.
+
+`PUT /repos/neverhuman/{jankurai-action,jankurai-tools-tui}/collaborators/jepsontaylor`
+with `permission=pull` returned HTTP 422 `Cannot assign jepsontaylor permission of read`
+on 2026-09-25. Both repositories still list that account as write. The hub
+repository still lists it as read. This change does not delete the collaborator.
 
 A token-authenticated PR allows normal CI to run automatically, as described in
 [GitHub's workflow trigger documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
