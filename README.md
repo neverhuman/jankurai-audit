@@ -64,14 +64,14 @@ supported.
 ## GitHub Action
 
 Pin the Action by commit. The immutable hub `@v1.7.0` Action tag does not accept
-`fail-under`. On the pin below, omitting `fail-under` uses the Action default
-of 85. Leave `plan` empty.
+`fail-under`. The pin below is `6cd9cbf`. Omitting `release-tag` on that commit
+installs `v1.7.1`, and omitting `fail-under` uses 85. Leave `plan` empty.
 
 ```yaml
 - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
   with:
     persist-credentials: false
-- uses: neverhuman/jankurai-action@4a45526ac904315f96e6bbebda4e088268023afa
+- uses: neverhuman/jankurai-action@6cd9cbfdd503431ea33278a7444ff8f1772f3115
   id: quality
   with:
     release-tag: v1.7.1
