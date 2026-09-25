@@ -6,6 +6,10 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+### Fixed
+
+- The GitHub Action example pins `6cd9cbf`, where the default `release-tag` is `v1.7.1`. Commit `4a45526` still defaults to the unpublished `v1.8.0` tag.
+
 ## 1.7.1 - 2026-09-24
 
 ### Changed
