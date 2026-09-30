@@ -13,13 +13,14 @@ try {
     if (apply) clean(family.path(repo));
   }
   for (const repo of family.repos) {
-    const slug = repo.slug, directory = family.path(repo);
+    // GitHub provisioning addresses the mirror; origin stays on the forge authority.
+    const slug = repo.github_slug, directory = family.path(repo);
     console.log(`${slug}: preserve histories; protect ${repo.required_check}`);
     if (!apply) continue;
     const result = run(['gh', 'api', `repos/${slug}`], { capture: true, check: false });
     if (result.status !== 0) {
       if (!result.stderr.includes('HTTP 404') || repo.name === 'jankurai') throw new Error(result.stderr);
-      api('user/repos', { name: repo.name, private: false, auto_init: false });
+      api('user/repos', { name: slug.split('/')[1], private: false, auto_init: false });
       const refs = gitText(directory, 'for-each-ref', '--format=%(refname)', 'refs/heads', 'refs/tags').split('\n');
       git(directory, ['push', '--atomic', repo.github, ...refs.map(ref => `${ref}:${ref}`)]);
     }
@@ -33,10 +34,10 @@ try {
       api(`repos/${slug}/rulesets`, { name: 'Immutable dependency and CI tags', target: 'tag', enforcement: 'active',
         conditions: { ref_name: { include: ['~ALL'], exclude: [] } }, rules: [{ type: 'deletion' }, { type: 'update' }] });
     }
-    if (gitText(directory, 'remote', 'get-url', 'origin') !== repo.github) {
-      if (gitText(directory, 'remote').split('\n').includes('jeryu')) throw new Error(`${slug}: inspect existing historical remote before changing origin`);
-      git(directory, ['remote', 'rename', 'origin', 'jeryu']);
-      git(directory, ['remote', 'add', 'origin', repo.github]);
+    if (gitText(directory, 'remote', 'get-url', 'origin') !== repo.hosted) {
+      if (gitText(directory, 'remote').split('\n').includes('github')) throw new Error(`${slug}: inspect existing historical remote before changing origin`);
+      git(directory, ['remote', 'rename', 'origin', 'github']);
+      git(directory, ['remote', 'add', 'origin', repo.hosted]);
     }
   }
 } catch (error) { console.error(`provision-family: ${error.message}`); process.exitCode = 1; }

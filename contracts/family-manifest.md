@@ -1,15 +1,41 @@
 # Family manifest contract
 
-`repos.manifest.toml` schema 2.0.0 is the authoritative portable family description.
-It declares exactly 15 unique repository identities under `neverhuman`, their
-GitHub HTTPS URLs, canonical paths relative to the workspace root, `main` as the
-default branch, and `<repo>/required` aggregate checks. `authority_forge` is `github`.
-`legacy_jeryu` fields retain historical origin information and are not build inputs.
+`repos.manifest.toml` schema 3.0.0 is the authoritative portable family description.
+The hosted forge is the authority: `main` of each `root/<repo>` on
+`git.neverhuman.org` is the source of truth and what gets deployed. `github.com`
+is a mirror of it. `authority_forge` therefore names the forge (`jeryu`), and a
+manifest that names `github` — or that routes `hosted_*` at github.com — is
+rejected by `validate-family.sh`.
+
+The manifest declares exactly 15 unique member identities. Each member carries
+its forge identity (`slug` and `jeryu_slug` = `root/<repo>`, `hosted` =
+`https://git.neverhuman.org/git/root/<repo>.git`), its GitHub mirror identity
+(`github_slug`, `github`), `mirror_github = true` and `mirror_github_main = true`
+so the forge enrolls it, canonical paths relative to the workspace root, `main`
+as the default branch, and `<repo>/required` aggregate checks. `<repo>/required`
+is the gate on the forge; the GitHub mirror's Actions are informational.
+
+Mirror names come from `mirror_repo_prefix`: the hub mirrors as
+`neverhuman/jankurai-audit` and every other member as
+`neverhuman/jankurai-audit-<suffix>`, except where `[mirror_repo_override]`
+pins a name. The old `neverhumanbot/jankurai-*` repositories cannot be
+transferred, which is why the mirror carries the hub's prefix.
+
+`legacy_jeryu` is retired (127.0.0.1:2224 no longer exists) and declaring it is
+an error.
+
+`[[mirror_only_repo]]` declares repositories the forge mirrors that are not
+family members: `jankurai-action` carries no split-member metadata, no
+`ops/ci/required.sh` and no `family.lock` pin, and the published Action keeps its
+`neverhuman/jankurai-action` name, so it is mirrored only and excluded from
+`expected_repo_count`.
 
 The 14 component revision/tag pairs appear only in `family.lock`. The hub itself
 is selected by its Git commit or release tag. `Cargo.lock` records the assembled
 Cargo graph; normal builds use `--locked`. Immutable tags must resolve to their
-recorded full 40-character commits.
+recorded full 40-character commits. Bootstrap clones and pin fetches use
+`hosted`, the authority; the fusion `[patch]` keys stay on the `github` mirror
+URLs the committed `Cargo.toml` files name.
 
 `validate-family.sh` validates these constraints, committed dependency boundaries,
 required member metadata, and full-SHA action pins. `--checkouts` also requires

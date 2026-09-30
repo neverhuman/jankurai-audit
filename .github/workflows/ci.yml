@@ -126,9 +126,12 @@ jobs:
           NEEDS_JSON: ${{ toJSON(needs) }}
           EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GH_TOKEN: ${{ github.token }}
+  # CI tags are cut on the forge, which is the family authority. On a GitHub
+  # mirror this job is inert instead of failing: the mirror is not the authority,
+  # so JANKURAI_GITHUB_AUTHORITY is unset there.
   publish-ci-tag:
     needs: required
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.required.result == 'success'
+    if: vars.JANKURAI_GITHUB_AUTHORITY == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.required.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

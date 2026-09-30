@@ -7,7 +7,9 @@ import { Family } from './family-model.mjs';
 import { api, successful } from './family-update.mjs';
 import { isLink } from './family-lib.mjs';
 
-const repository = 'neverhuman/jankurai', files = ['family.lock', 'Cargo.lock'];
+// The hub's GitHub mirror: family-update automation runs against github.com,
+// while the forge (repos.manifest.toml authority) owns root/jankurai itself.
+const repository = 'neverhuman/jankurai-audit', files = ['family.lock', 'Cargo.lock'];
 const content = (file, ref, request = api) => Buffer.from(request(`repos/${repository}/contents/${file}?ref=${ref}`).content, 'base64').toString();
 export const branchFor = candidate => 'automation/family-' + createHash('sha256').update(candidate['family.lock'] + '\0' + candidate['Cargo.lock']).digest('hex').slice(0, 24);
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
@@ -31,9 +33,9 @@ function validatePin(family, pin, request) {
   const sha = pin.commit;
   if (!/^[a-f0-9]{40}$/.test(sha) || pin.tag !== `ci-${sha}`) throw new Error('candidate needs an immutable exact-SHA CI tag');
   const repo = family.repos.find(repo => repo.name === pin.repo);
-  const ref = request(`repos/${repo.slug}/git/ref/tags/${pin.tag}`).object;
+  const ref = request(`repos/${repo.github_slug}/git/ref/tags/${pin.tag}`).object;
   if (ref.type !== 'commit' || ref.sha !== sha) throw new Error('candidate CI tag mismatch');
-  const comparison = request(`repos/${repo.slug}/compare/${sha}...${repo.default_branch}`);
+  const comparison = request(`repos/${repo.github_slug}/compare/${sha}...${repo.default_branch}`);
   if (!['ahead', 'identical'].includes(comparison.status) || !successful(repo, sha, request)) throw new Error('candidate is not a successful default-branch revision');
 }
 export function publish(family, directory, request = api) {

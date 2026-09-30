@@ -8,8 +8,11 @@ permissions:
 concurrency:
   group: family-automation
   cancel-in-progress: false
+# Family updates are proposed and merged on the forge, which is the family
+# authority. Every job below is inert on a GitHub mirror rather than failing.
 jobs:
   rotation:
+    if: vars.JANKURAI_GITHUB_AUTHORITY == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -25,6 +28,7 @@ jobs:
         env:
           AUTOMATION_TOKEN_EXPIRES: ${{ vars.FAMILY_AUTOMATION_TOKEN_EXPIRES }}
   collect:
+    if: vars.JANKURAI_GITHUB_AUTHORITY == 'true'
     needs: rotation
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -67,7 +71,7 @@ jobs:
           if-no-files-found: error
   publish:
     needs: [rotation, collect]
-    if: needs.rotation.result == 'success' && needs.collect.result == 'success' && needs.collect.outputs.changed == 'true'
+    if: vars.JANKURAI_GITHUB_AUTHORITY == 'true' && needs.rotation.result == 'success' && needs.collect.result == 'success' && needs.collect.outputs.changed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -87,6 +91,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.FAMILY_AUTOMATION_TOKEN }}
   merge:
+    if: vars.JANKURAI_GITHUB_AUTHORITY == 'true'
     needs: rotation
     runs-on: ubuntu-24.04
     timeout-minutes: 10

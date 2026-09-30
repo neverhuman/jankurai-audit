@@ -7,6 +7,13 @@ import { readToml, exists, isLink, gitText, git, clean, atomicWrite, run, buildE
 
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const GIT = '/usr/bin/git';
+// Authority is the hosted jeryu forge; github.com is only a mirror of it.
+const FORGE = 'jeryu';
+const HOSTED_BASE = 'https://git.neverhuman.org';
+const MIRROR_BASE = 'https://github.com';
+// The hub mirrors as <prefix>; every other member as <prefix>-<suffix>.
+const mirrorRepoName = (manifest, name) => (manifest.mirror_repo_override ?? {})[name]
+  ?? `${manifest.mirror_repo_prefix}${name.slice(manifest.family.length)}`;
 // Disk receipts cannot authorize a copy imported by a different process.
 const isolateSeals = new Map();
 
@@ -23,18 +30,34 @@ export class Family {
   }
   validate() {
     const m = this.manifest;
-    if (m.schema_version !== '2.0.0' || m.authority_forge !== 'github') throw new Error('expected GitHub family schema 2.0.0');
+    // The hosted forge is the authority; GitHub is a mirror and may never claim it.
+    if (m.authority_forge === 'github' || m.authority_forge === m.mirror_forge) throw new Error('GitHub is a mirror, not the family authority');
+    if (m.schema_version !== '3.0.0' || m.authority_forge !== FORGE) throw new Error(`expected ${FORGE}-authority family schema 3.0.0`);
+    if (m.hosted_base_url !== HOSTED_BASE || m.hosted_git_url_template !== `${HOSTED_BASE}/git/{owner}/{repo}.git`) throw new Error('hosted authority routes must name the forge');
+    if (m.mirror_forge !== 'github' || m.mirror_base_url !== MIRROR_BASE || m.mirror_git_url_template !== `${MIRROR_BASE}/{owner}/{repo}.git`) throw new Error('mirror routes must name GitHub');
     const names = this.repos.map(repo => repo.name);
     if (new Set(names).size !== names.length || names.length !== m.expected_repo_count ||
         JSON.stringify([...names].sort()) !== JSON.stringify([...m.required_repos].sort())) throw new Error('duplicate or missing family repository');
     const components = names.filter(name => name !== 'jankurai').sort();
     if (this.pins.size !== this.lock.repo.length || JSON.stringify([...this.pins.keys()].sort()) !== JSON.stringify(components)) throw new Error('lock must pin each component exactly once');
     for (const repo of this.repos) this.validateRepo(repo);
+    // Mirror-only repositories carry the same routes but no lock pin and no member metadata.
+    for (const repo of this.manifest.mirror_only_repo ?? []) {
+      if (names.includes(repo.name)) throw new Error(`${repo.name}: declared both as a member and mirror-only`);
+      if (this.pins.has(repo.name)) throw new Error(`${repo.name}: mirror-only repositories take no lock pin`);
+      this.validateRepo(repo);
+    }
   }
   validateRepo(repo) {
     if (!/^jankurai(?:-[a-z]+)*$/.test(repo.name)) throw new Error('invalid repository name');
-    const url = `https://github.com/${this.manifest.public_owner}/${repo.name}.git`;
-    if (repo.path !== repo.name || repo.github !== url || repo.hosted !== url) throw new Error(`${repo.name}: expected relative canonical path and GitHub URL`);
+    const m = this.manifest;
+    const slug = `${m.local_owner}/${repo.name}`;
+    const mirrorSlug = `${m.public_owner}/${mirrorRepoName(m, repo.name)}`;
+    if (repo.path !== repo.name || repo.slug !== slug || repo.jeryu_slug !== slug ||
+        repo.hosted !== `${m.hosted_base_url}/git/${slug}.git`) throw new Error(`${repo.name}: expected relative canonical path and forge authority URL`);
+    if (repo.github_slug !== mirrorSlug || repo.github !== `${m.mirror_base_url}/${mirrorSlug}.git`) throw new Error(`${repo.name}: expected the GitHub mirror URL`);
+    if (repo.mirror_github !== true || repo.mirror_github_main !== true) throw new Error(`${repo.name}: the forge must mirror main to GitHub`);
+    if ('legacy_jeryu' in repo) throw new Error(`${repo.name}: legacy_jeryu is retired`);
     if (repo.required_check !== `${repo.name}/required` || repo.default_branch !== 'main') throw new Error('invalid branch/check contract');
     if ('tag' in repo || 'commit' in repo) throw new Error('component revision pins belong only in family.lock');
     const pin = this.pins.get(repo.name);
@@ -52,7 +75,7 @@ export class Family {
   }
   fetchPin(repo) {
     const pin = this.pins.get(repo.name), directory = this.path(repo);
-    git(directory, ['fetch', '--no-tags', repo.github, `refs/tags/${pin.tag}:refs/tags/${pin.tag}`], { env: buildEnvironment() });
+    git(directory, ['fetch', '--no-tags', repo.hosted, `refs/tags/${pin.tag}:refs/tags/${pin.tag}`], { env: buildEnvironment() });
     if (gitText(directory, 'rev-parse', `refs/tags/${pin.tag}^{commit}`) !== pin.commit) throw new Error(`${repo.name}: immutable tag differs from lock`);
   }
   bootstrap(restore = false) {
@@ -61,7 +84,7 @@ export class Family {
     for (const repo of this.components()) {
       const directory = this.path(repo), pin = this.pins.get(repo.name);
       if (!exists(directory)) {
-        run(['git', 'clone', '--no-checkout', '--origin', 'origin', repo.github, directory], { env: buildEnvironment() });
+        run(['git', 'clone', '--no-checkout', '--origin', 'origin', repo.hosted, directory], { env: buildEnvironment() });
         this.fetchPin(repo);
         git(directory, ['checkout', '--detach', pin.commit]);
       } else if (restore) this.fetchPin(repo);

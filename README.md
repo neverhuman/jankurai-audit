@@ -4,7 +4,7 @@
 [![Jankurai score: 91/100](agent/jankurai-badge.svg)](agent/jankurai-badge.json)
 <!-- jankurai-badge:end -->
 
-Score for protected revision [fb97e59](https://github.com/neverhuman/jankurai/commit/fb97e59686fb4c6e1f27b4d567adf8d7606bc881):
+Score for protected revision [fb97e59](https://github.com/neverhuman/jankurai-audit/commit/fb97e59686fb4c6e1f27b4d567adf8d7606bc881):
 [ratchet report](agent/badge-source/repo-score.json) · [CI provenance](agent/badge-source/provenance.json).
 
 That 91/100 is the stored full ratchet of `fb97e59`. It covers this hub at that
@@ -15,9 +15,15 @@ policy and structure. Application pentests, cloud IAM, Terraform or Kubernetes
 posture, and runtime authorization are outside it.
 
 [**Current release v1.7.1**](https://github.com/neverhuman/jankurai/releases/tag/v1.7.1)
-· [CI](https://github.com/neverhuman/jankurai/actions/workflows/ci.yml)
+· [CI](https://github.com/neverhuman/jankurai-audit/actions/workflows/ci.yml)
 · [Install](docs/install.md)
 · [AGENTS.md](AGENTS.md)
+
+The authority for this family is the hosted forge: `main` of each
+`root/jankurai*` on `git.neverhuman.org` is the source of truth and what gets
+deployed. The `neverhuman/jankurai-audit*` repositories on GitHub are mirrors of
+it, so pull requests go to the forge and `<repo>/required` there is the gate.
+See [docs/forge-authority.md](docs/forge-authority.md).
 
 Jankurai audits a repository for unsafe changes, missing proof, unclear ownership,
 and drift between code and its contracts. It writes a reviewable report and a
@@ -31,15 +37,15 @@ Open the [1920×1080 full-resolution GIF](docs/demo/audit-1080p.gif).
 
 | Piece | Repository | Use it for |
 | --- | --- | --- |
-| Hub | [jankurai](https://github.com/neverhuman/jankurai) | Installer, release assets, `family.lock`, `scripts/family.sh` |
-| Auditor | [jankurai-core](https://github.com/neverhuman/jankurai-core) | `jankurai` CLI, rules, `diff-audit`, `rules export` |
+| Hub | [jankurai](https://github.com/neverhuman/jankurai-audit) | Installer, release assets, `family.lock`, `scripts/family.sh` |
+| Auditor | [jankurai-core](https://github.com/neverhuman/jankurai-audit-core) | `jankurai` CLI, rules, `diff-audit`, `rules export` |
 | Action | [jankurai-action](https://github.com/neverhuman/jankurai-action) | Composite Action to pin from consumer workflows |
 | Tools | `jankurai-tools-*` | Libraries the fused build compiles. Not install targets |
 | Standard, contracts, conformance, paper, deploy | their own repositories | Doctrine, schemas, fixtures, paper, deploy notes |
 
 Detail: [docs/architecture.md](docs/architecture.md).
 The locked auditor's rule catalog is
-[docs/rule-catalog.md at 0e2c573](https://github.com/neverhuman/jankurai-core/blob/0e2c573ad2f2fe427a2a1227fac86c1435852a45/docs/rule-catalog.md).
+[docs/rule-catalog.md at 0e2c573](https://github.com/neverhuman/jankurai-audit-core/blob/0e2c573ad2f2fe427a2a1227fac86c1435852a45/docs/rule-catalog.md).
 
 ## Install
 
@@ -86,7 +92,7 @@ installs `v1.7.1`, and omitting `fail-under` uses 85. Leave `plan` empty.
 ## Contributor clone
 
 ```sh
-git clone https://github.com/neverhuman/jankurai.git
+git clone https://git.neverhuman.org/git/root/jankurai.git
 cd jankurai
 bash scripts/family.sh setup
 ```

@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { Family } from './family-model.mjs';
 import { git, gitText, atomicWrite, buildEnvironment } from './family-lib.mjs';
-import { lockText, update } from './family-update.mjs';
+import { lockText, successful, update } from './family-update.mjs';
 import { branchFor, validateCandidate, publish } from './publish-family-update.mjs';
 
 function fixture(t) {
@@ -24,8 +24,11 @@ function fixture(t) {
   const sha = gitText(repo, 'rev-parse', 'HEAD');
   git(repo, ['tag', 'fixture-v1']);
   const names = ['jankurai', 'jankurai-core'];
-  let manifest = 'schema_version = "2.0.0"\nauthority_forge = "github"\npublic_owner = "neverhuman"\nexpected_repo_count = 2\nrequired_repos = ["jankurai", "jankurai-core"]\n';
-  for (const name of names) manifest += `\n[[repo]]\nname = "${name}"\npath = "${name}"\nslug = "neverhuman/${name}"\ndefault_branch = "main"\nrequired_check = "${name}/required"\ngithub = "https://github.com/neverhuman/${name}.git"\nhosted = "https://github.com/neverhuman/${name}.git"\n`;
+  let manifest = 'schema_version = "3.0.0"\nfamily = "jankurai"\nauthority_forge = "jeryu"\nhosted_base_url = "https://git.neverhuman.org"\nhosted_git_url_template = "https://git.neverhuman.org/git/{owner}/{repo}.git"\nmirror_forge = "github"\nmirror_base_url = "https://github.com"\nmirror_git_url_template = "https://github.com/{owner}/{repo}.git"\nmirror_repo_prefix = "jankurai-audit"\npublic_owner = "neverhuman"\nlocal_owner = "root"\nexpected_repo_count = 2\nrequired_repos = ["jankurai", "jankurai-core"]\n';
+  for (const name of names) {
+    const mirror = name === 'jankurai' ? 'jankurai-audit' : `jankurai-audit${name.slice('jankurai'.length)}`;
+    manifest += `\n[[repo]]\nname = "${name}"\npath = "${name}"\nslug = "root/${name}"\njeryu_slug = "root/${name}"\ndefault_branch = "main"\nrequired_check = "${name}/required"\nhosted = "https://git.neverhuman.org/git/root/${name}.git"\ngithub = "https://github.com/neverhuman/${mirror}.git"\ngithub_slug = "neverhuman/${mirror}"\nmirror_github = true\nmirror_github_main = true\n`;
+  }
   fs.writeFileSync(path.join(hub, 'repos.manifest.toml'), manifest);
   fs.writeFileSync(path.join(hub, 'family.lock'), `[[repo]]\nrepo = "jankurai-core"\ntag = "fixture-v1"\ncommit = "${sha}"\n`);
   const family = new Family(hub);
@@ -85,6 +88,59 @@ test('manifest rejects duplicate membership and revision pins', t => {
   delete family.repos[1].tag;
   family.repos.push(family.repos[1]);
   assert.throws(() => family.validate(), /duplicate or missing/);
+});
+test('the forge is the authority and GitHub only a mirror', t => {
+  const { family } = fixture(t);
+  assert.equal(family.manifest.authority_forge, 'jeryu');
+  for (const repo of family.repos) {
+    assert.equal(repo.hosted, `https://git.neverhuman.org/git/root/${repo.name}.git`);
+    assert.equal(repo.jeryu_slug, `root/${repo.name}`);
+    assert.match(repo.github, /^https:\/\/github\.com\/neverhuman\/jankurai-audit/);
+    assert.equal(repo.mirror_github, true);
+    assert.equal(repo.mirror_github_main, true);
+  }
+});
+test('manifest rejects GitHub as the family authority', t => {
+  const { family } = fixture(t);
+  family.manifest.authority_forge = 'github';
+  assert.throws(() => family.validate(), /GitHub is a mirror, not the family authority/);
+  family.manifest.authority_forge = 'jeryu';
+  family.manifest.hosted_base_url = 'https://github.com';
+  assert.throws(() => family.validate(), /hosted authority routes must name the forge/);
+});
+test('manifest rejects members that route away from the forge or stop mirroring', t => {
+  const { family } = fixture(t);
+  const repo = family.repos[1], hosted = repo.hosted;
+  repo.hosted = 'https://github.com/neverhuman/jankurai-audit-core.git';
+  assert.throws(() => family.validate(), /forge authority URL/);
+  repo.hosted = hosted;
+  repo.mirror_github_main = false;
+  assert.throws(() => family.validate(), /must mirror main to GitHub/);
+  repo.mirror_github_main = true;
+  repo.legacy_jeryu = 'ssh://git@127.0.0.1:2224/root/jankurai-core.git';
+  assert.throws(() => family.validate(), /legacy_jeryu is retired/);
+});
+test('mirror-only repositories are validated but never family members', t => {
+  const { family } = fixture(t);
+  const action = {
+    name: 'jankurai-action', path: 'jankurai-action', slug: 'root/jankurai-action',
+    jeryu_slug: 'root/jankurai-action', default_branch: 'main', required_check: 'jankurai-action/required',
+    hosted: 'https://git.neverhuman.org/git/root/jankurai-action.git',
+    github: 'https://github.com/neverhuman/jankurai-action.git', github_slug: 'neverhuman/jankurai-action',
+    mirror_github: true, mirror_github_main: true,
+  };
+  family.manifest.mirror_repo_override = { 'jankurai-action': 'jankurai-action' };
+  family.manifest.mirror_only_repo = [action];
+  family.validate();
+  assert.deepEqual(family.repos.map(repo => repo.name), ['jankurai', 'jankurai-core']);
+  family.manifest.mirror_only_repo = [{ ...action, name: 'jankurai-core' }];
+  assert.throws(() => family.validate(), /both as a member and mirror-only/);
+});
+test('GitHub API paths address the mirror, not the forge slug', t => {
+  const { family } = fixture(t);
+  const repo = family.repos[1], seen = [];
+  successful(repo, 'a'.repeat(40), endpoint => { seen.push(endpoint); return { check_runs: [] }; });
+  assert.deepEqual(seen, [`repos/neverhuman/jankurai-audit-core/commits/${'a'.repeat(40)}/check-runs?filter=latest&per_page=100`]);
 });
 test('lock rendering changes only the selected immutable pin', t => {
   const { hub, family } = fixture(t);
@@ -164,11 +220,11 @@ function publicationFixture(t) {
       return { content: Buffer.from(text).toString('base64') };
     }
     if (endpoint.includes('/git/ref/tags/')) return { object: { type: 'commit', sha: componentSha } };
-    if (endpoint.includes('/jankurai-core/compare/')) return { status: 'identical' };
+    if (endpoint.includes('-core/compare/')) return { status: 'identical' };
     if (endpoint.includes('/check-runs?')) return { check_runs: state.eligible ? [{
       name: 'jankurai-core/required', head_sha: componentSha, status: 'completed', conclusion: 'success', app: { slug: 'github-actions' }
     }] : [] };
-    if (endpoint.includes('/pulls?')) return [{ number: 7, html_url: 'https://example.invalid/pull/7', head: { sha: oldHead, ref: branch, repo: { full_name: 'neverhuman/jankurai' } } }];
+    if (endpoint.includes('/pulls?')) return [{ number: 7, html_url: 'https://example.invalid/pull/7', head: { sha: oldHead, ref: branch, repo: { full_name: 'neverhuman/jankurai-audit' } } }];
     if (endpoint.endsWith('/pulls/7/files?per_page=100')) return [{ filename: state.unexpectedFile ? 'README.md' : 'family.lock', status: 'modified' }];
     if (endpoint.includes('/compare/')) return { merge_base_commit: { sha: state.upToDate ? baseSha : 'e'.repeat(40) } };
     if (endpoint.endsWith(`/git/commits/${baseSha}`)) return { tree: { sha: 'base-tree' } };

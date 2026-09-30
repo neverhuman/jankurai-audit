@@ -6,6 +6,26 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+### Changed
+
+- The hosted forge is the family authority and GitHub is a mirror.
+  `repos.manifest.toml` is schema `3.0.0`: `authority_forge = "jeryu"`, forge
+  `hosted`/`slug`/`jeryu_slug` routes, GitHub `github`/`github_slug` mirror
+  routes, `mirror_github` and `mirror_github_main` on every member, and the
+  retired `legacy_jeryu` fields removed. `scripts/validate-family.sh` rejects a
+  manifest that names GitHub as the authority.
+- GitHub mirror names carry the hub's prefix: the hub is
+  `neverhuman/jankurai-audit`, every other member `neverhuman/jankurai-audit-<x>`,
+  and the published Action keeps `neverhuman/jankurai-action`. README, badges and
+  docs follow; version-pinned `v1.7.1` distribution URLs do not, because those
+  artifacts are already published under the old name.
+- `jankurai-action` is declared `[[mirror_only_repo]]`: mirrored by the forge but
+  not a family member, so `expected_repo_count` stays 15.
+- `ci.yml`'s `publish-ci-tag` job and `family-update.yml` are gated on
+  `vars.JANKURAI_GITHUB_AUTHORITY`, so a mirror skips them instead of failing.
+  `docs/forge-authority.md` records the full posture, the manifest path the forge
+  must add to `split_manifests`, and the follow-up work in the member repositories.
+
 ### Fixed
 
 - The GitHub Action example pins `6cd9cbf`, where the default `release-tag` is `v1.7.1`. Commit `4a45526` still defaults to the unpublished `v1.8.0` tag.

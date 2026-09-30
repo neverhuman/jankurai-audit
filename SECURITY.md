@@ -12,7 +12,7 @@ Do not open a public issue for suspected vulnerabilities.
 
 Use GitHub private vulnerability reporting:
 
-https://github.com/neverhuman/jankurai/security/advisories/new
+https://github.com/neverhuman/jankurai-audit/security/advisories/new
 
 If that path is unavailable, contact a maintainer privately through GitHub before publishing details.
 

@@ -72,7 +72,7 @@ Maintainer rotation, in order:
 6. Finish before 2026-10-08. After that date a still-valid-looking variable
    of `2026-10-08` keeps the job red, which is the intended result.
 
-`PUT /repos/neverhuman/{jankurai-action,jankurai-tools-tui}/collaborators/jepsontaylor`
+`PUT /repos/neverhuman/{jankurai-action,jankurai-audit-tools-tui}/collaborators/jepsontaylor`
 with `permission=pull` returned HTTP 422 `Cannot assign jepsontaylor permission of read`
 on 2026-09-25. Both repositories still list that account as write. The hub
 repository still lists it as read. This change does not delete the collaborator.

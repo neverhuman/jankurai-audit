@@ -8,5 +8,6 @@ public_owner = "neverhuman"
 local_owner = "root"
 release_tag_pattern = "jankurai-v1.7.0-split.0"
 
-authority_forge = "github"
-primary_repo = "neverhuman/jankurai"
+authority_forge = "jeryu"
+primary_repo = "root/jankurai"
+mirror_repo = "neverhuman/jankurai-audit"

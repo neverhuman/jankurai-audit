@@ -20,7 +20,7 @@ hub (this repo)
 
 | Path | Role |
 | --- | --- |
-| `repos.manifest.toml` | Sole protected family inventory: paths, slugs, branches, checks, routes, and roles. |
+| `repos.manifest.toml` | Sole protected family inventory: forge authority and GitHub mirror routes, paths, slugs, branches, checks, and roles. |
 | `family.lock` | Pins each member repo to a release tag and commit SHA. |
 | `scripts/` | Family validation, deterministic root-manifest projection, local fusion, and CI routing. |
 | `ops/ci/` | Thin per-lane CI scripts shared by `just` and GitHub Actions. |
