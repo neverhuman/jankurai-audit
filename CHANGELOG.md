@@ -39,7 +39,7 @@ behaviour.
 ### Changed
 
 - Public release is `1.7.2`. `jankurai`, `tuiwright`, and `@jankurai/ux-qa` report that version. Standard `0.9.0` and schema `1.9.0` are unchanged.
-- `family.lock` pins core `6408d1f`, kernel `b4ef74d`, analyzers `d9a5733`,
+- `family.lock` pins core `1e8cda3`, kernel `b4ef74d`, analyzers `d9a5733`,
   Tuiwright `98d9159`, and UX `dc4ad3d`. Core pins the same kernel and analyzers
   revisions; 1.7.1 locked analyzers `6cd5551` while core named `eeda8c0`.
 - Scoring follows split.5: tool adoption credits CI evidence again (no
