@@ -1,7 +1,7 @@
 {
   "name": "jankurai-hub",
   "private": true,
-  "version": "1.7.1",
+  "version": "1.7.2",
   "type": "module",
   "scripts": {
     "test": "node --test scripts/*.test.mjs scripts/demo/*.test.mjs",

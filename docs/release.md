@@ -2,7 +2,7 @@
 
 The hub publishes releases from version tags. `VERSION`, the auditor version,
 the Tuiwright version, and the UX npm package version must agree. The first post-migration release is
-`v1.7.0`. The current release is `v1.7.1`. Publish its tag only after every
+`v1.7.0`. The current release is `v1.7.2`. Publish its tag only after every
 component default branch, complete hub integration, and both release-platform checks pass.
 
 The release workflow independently checks the locked family, builds Linux x86-64
@@ -28,8 +28,8 @@ Tarballs contain only their selected executable, license, locks, and provenance.
 Download `jankurai-installer.sh` from the desired hub release, then:
 
 ```sh
-bash jankurai-installer.sh --tag v1.7.1
-bash jankurai-installer.sh --tag v1.7.1 --product tuiwright
+bash jankurai-installer.sh --tag v1.7.2
+bash jankurai-installer.sh --tag v1.7.2 --product tuiwright
 ```
 
 The installer requires the platform shell, curl, archive tools, and SHA-256 tooling.
@@ -39,11 +39,11 @@ tag, the GitHub attestation identity and hosted runner, the release commit, the
 archive inventory, and the embedded lock digests before installing. Both platforms
 install to `~/.local/bin` by default. `--verify-only` performs all verification
 and runs the staged binary without installing. The hub Action metadata defaults to
-`v1.7.1`. The immutable `neverhuman/jankurai@v1.7.0` tag does not.
+`v1.7.2`. The immutable `neverhuman/jankurai@v1.7.0` tag does not.
 
 To install the UX CLI, verify its downloaded checksum, Sigstore bundle, and GitHub
 attestation against the same release workflow identity before running
-`npm install -g ./jankurai-ux-qa-1.7.1.tgz`. Install the declared Playwright peer
+`npm install -g ./jankurai-ux-qa-1.7.2.tgz`. Install the declared Playwright peer
 dependency and Chromium as required by the package.
 
 Releases and dependency tags are immutable. Roll back by explicitly selecting an

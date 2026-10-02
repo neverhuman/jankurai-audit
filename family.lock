@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 family = "jankurai"
-release = "1.7.1"
+release = "1.7.2"
 source = "repos.manifest.toml"
 generated_at = "2026-09-09T04:17:00Z"
 source_repo = "root/jankurai"
@@ -8,8 +8,8 @@ source_commit = "cea83b0cbe204be276a2f0299cd760f6812ea2b0"
 
 [[repo]]
 repo = "jankurai-core"
-tag = "ci-0e2c573ad2f2fe427a2a1227fac86c1435852a45"
-commit = "0e2c573ad2f2fe427a2a1227fac86c1435852a45"
+tag = "ci-6408d1f4eaad41b12b9f6216486e144a78c1896e"
+commit = "6408d1f4eaad41b12b9f6216486e144a78c1896e"
 
 [[repo]]
 repo = "jankurai-contracts"
@@ -33,18 +33,18 @@ commit = "54c1deb4c94c07a214ce2a8ff9c3605f23e927c6"
 
 [[repo]]
 repo = "jankurai-tools-tui"
-tag = "ci-ad47d010259c23b48e523a8e5d8d3e523a212d91"
-commit = "ad47d010259c23b48e523a8e5d8d3e523a212d91"
+tag = "ci-98d9159432a2b7caf8e88289f12e3cedd6f53b93"
+commit = "98d9159432a2b7caf8e88289f12e3cedd6f53b93"
 
 [[repo]]
 repo = "jankurai-tools-ux"
-tag = "ci-00e71d153de27b1226ec3bb7d956d168374ef83c"
-commit = "00e71d153de27b1226ec3bb7d956d168374ef83c"
+tag = "ci-dc4ad3da91fc2df4b9b1bae7353bd99a4cf1383e"
+commit = "dc4ad3da91fc2df4b9b1bae7353bd99a4cf1383e"
 
 [[repo]]
 repo = "jankurai-tools-kernel"
-tag = "ci-cd94f46d3b4ba3b60780b996ed5f7d1f559dfaef"
-commit = "cd94f46d3b4ba3b60780b996ed5f7d1f559dfaef"
+tag = "ci-b4ef74d9d59651375dd5db1d1e9b7d953e447d17"
+commit = "b4ef74d9d59651375dd5db1d1e9b7d953e447d17"
 
 [[repo]]
 repo = "jankurai-tools-guard"
@@ -63,8 +63,8 @@ commit = "602b608c59690020eb66a2069f67d33a75b481f1"
 
 [[repo]]
 repo = "jankurai-tools-analyzers"
-tag = "ci-6cd55512e491a029397afb5e4e51531c9bffe203"
-commit = "6cd55512e491a029397afb5e4e51531c9bffe203"
+tag = "ci-d9a57332c3d1951b2de0d63f877416834be9d04a"
+commit = "d9a57332c3d1951b2de0d63f877416834be9d04a"
 
 [[repo]]
 repo = "jankurai-tools-fleet"

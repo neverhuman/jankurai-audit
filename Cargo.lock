@@ -1108,7 +1108,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jankurai"
-version = "1.7.1"
+version = "1.7.2"
 dependencies = [
  "aho-corasick",
  "anyhow",
@@ -2778,7 +2778,7 @@ checksum = "7b3e06c9b9d80ed6b745c7159c40b311ad2916abb34a49e9be2653b90db0d8dd"
 
 [[package]]
 name = "tuiwright"
-version = "1.7.1"
+version = "1.7.2"
 dependencies = [
  "anyhow",
  "crossterm",
@@ -2800,7 +2800,7 @@ dependencies = [
 
 [[package]]
 name = "tuiwright-cli"
-version = "1.7.1"
+version = "1.7.2"
 dependencies = [
  "anyhow",
  "clap",

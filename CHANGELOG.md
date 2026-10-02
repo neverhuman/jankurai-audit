@@ -30,6 +30,36 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 - The GitHub Action example pins `6cd9cbf`, where the default `release-tag` is `v1.7.1`. Commit `4a45526` still defaults to the unpublished `v1.8.0` tag.
 
+## 1.7.2 - 2026-10-02
+
+1.7.2 carries the governed split.5 scoring (`jeryu/jankurai`
+`v1.6.11-deadlang-precision-split.5`), except where the owner chose 1.7
+behaviour.
+
+### Changed
+
+- Public release is `1.7.2`. `jankurai`, `tuiwright`, and `@jankurai/ux-qa` report that version. Standard `0.9.0` and schema `1.9.0` are unchanged.
+- `family.lock` pins core `6408d1f`, kernel `b4ef74d`, analyzers `d9a5733`,
+  Tuiwright `98d9159`, and UX `dc4ad3d`. Core pins the same kernel and analyzers
+  revisions; 1.7.1 locked analyzers `6cd5551` while core named `eeda8c0`.
+- Scoring follows split.5: tool adoption credits CI evidence again (no
+  "admitted execution observation"); HLT-001 ignores Rust comments; HLT-047
+  checks that CLAUDE.md/GEMINI.md reference AGENTS.md; just/make lanes include
+  their recipe dependencies; CI-cap findings of forge-gated repositories point
+  at `.jeryu/ci.toml`.
+- False positives fixed: HLT-024 ZYAL placement fires only for runbook
+  locations, and HLT-040 repo-rot no longer treats the word `final` as a stale
+  copy.
+- Kept from 1.7 by owner decision: an omitted `fail_on` means critical+high, and
+  conformance blockers block.
+
+### Fixed
+
+- The fused build patches the git sources members actually depend on
+  (`github.com/<public_owner>/<repo>.git`). Since the forge-authority change the
+  patches were keyed by the `jankurai-audit-*` mirror URLs, which no member
+  Cargo.toml names, so `scripts/family.sh build --locked` could not resolve.
+
 ## 1.7.1 - 2026-09-24
 
 ### Changed
