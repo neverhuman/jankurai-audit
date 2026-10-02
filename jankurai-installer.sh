@@ -2,7 +2,7 @@
 # Install verified public tarballs from the immutable release workflow identity.
 set -euo pipefail
 fail() { printf 'installer: %s\n' "$*" >&2; exit 1; }
-repo="${JANKURAI_RELEASE_REPO:-neverhuman/jankurai}"
+repo="${JANKURAI_RELEASE_REPO:-neverhuman/jankurai-audit}"
 tag="${JANKURAI_RELEASE_TAG:-v1.7.2}"
 install_dir="${JANKURAI_INSTALL_DIR:-$HOME/.local/bin}"
 product=jankurai
@@ -30,6 +30,22 @@ case "$(uname -s)/$(uname -m)" in
   Darwin/arm64) target=aarch64-apple-darwin ;;
   *) fail 'supported platforms: Linux x86-64 and Apple Silicon macOS' ;;
 esac
+# The hub was renamed from neverhuman/jankurai to neverhuman/jankurai-audit after
+# v1.7.1. Sigstore certificates keep the repository name they were signed under,
+# so v1.7.1 and earlier verify only as neverhuman/jankurai and every later
+# release verifies only as neverhuman/jankurai-audit. Other repositories verify
+# as themselves.
+signer="$repo"
+if [[ "$repo" == neverhuman/jankurai || "$repo" == neverhuman/jankurai-audit ]]; then
+  IFS=. read -r major minor patch <<< "${tag#v}"
+  patch="${patch%%[!0-9]*}"
+  major=$((10#$major)) minor=$((10#$minor)) patch=$((10#$patch))
+  if (( major < 1 || (major == 1 && (minor < 7 || (minor == 7 && patch <= 1))) )); then
+    signer=neverhuman/jankurai
+  else
+    signer=neverhuman/jankurai-audit
+  fi
+fi
 stem="$product-${tag#v}-$target"
 asset="$stem.tar.gz"
 if "$print_asset"; then printf '%s\n' "$asset"; exit 0; fi
@@ -89,7 +105,7 @@ for name in "$asset" "$asset.sha256" "$asset.sigstore.bundle" "$asset.attestatio
     curl --proto '=https' --tlsv1.2 -fsSL "$base/$name" -o "$work/$name"
   fi
 done
-identity="https://github.com/$repo/.github/workflows/release.yml@refs/tags/$tag"
+identity="https://github.com/$signer/.github/workflows/release.yml@refs/tags/$tag"
 [[ "$(cat "$work/$asset.sha256")" == "$(sha256 "$work/$asset")  $asset" ]] || fail 'checksum mismatch'
 "$work/bin/cosign" verify-blob "$work/$asset" --bundle "$work/$asset.sigstore.bundle" \
   --certificate-identity "$identity" \
@@ -105,7 +121,7 @@ tar -xzf "$work/$asset" --no-same-owner -C "$work/payload"
 payload="$work/payload/$stem"
 # jq expands these --arg bindings; Bash must leave them literal.
 # shellcheck disable=SC2016
-"$work/bin/jq" -e --arg repo "https://github.com/$repo" --arg target "$target" --arg version "${tag#v}" \
+"$work/bin/jq" -e --arg repo "https://github.com/$signer" --arg target "$target" --arg version "${tag#v}" \
   '.schema == "jankurai.release/v1" and .repository == $repo and (.commit | test("^[0-9a-f]{40}$")) and .target == $target and .version == $version' \
   "$payload/provenance.json" >/dev/null || fail 'release provenance mismatch'
 # shellcheck disable=SC2016
@@ -118,7 +134,7 @@ release_commit="$("$work/bin/jq" -er '.commit' "$payload/provenance.json")"
 # including the source commit and tag, rather than trusting predicate text alone.
 env -u GH_TOKEN -u GITHUB_TOKEN -u GH_ENTERPRISE_TOKEN -u GITHUB_ENTERPRISE_TOKEN \
   GH_CONFIG_DIR="$work/gh-config" "$work/bin/gh" attestation verify "$work/$asset" \
-  --bundle "$work/$asset.attestation.jsonl" --repo "$repo" \
+  --bundle "$work/$asset.attestation.jsonl" --repo "$signer" \
   --cert-identity "$identity" --cert-oidc-issuer https://token.actions.githubusercontent.com \
   --signer-digest "$release_commit" --source-digest "$release_commit" \
   --source-ref "refs/tags/$tag" --deny-self-hosted-runners

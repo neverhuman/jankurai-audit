@@ -9,10 +9,13 @@ import { fileURLToPath } from 'node:url';
 
 export const SUCCESS_MARKER =
   'Real anonymous signatures and attestations verified; modified content and wrong repository/workflow/source/tag rejected.';
-const REPO = 'neverhuman/jankurai';
+// The hub was renamed from neverhuman/jankurai after v1.7.1. Probes are signed per
+// candidate commit, so only the current repository identity can qualify a tag.
+export const REPO = 'neverhuman/jankurai-audit';
 const WORKFLOW = '.github/workflows/release-services.yml';
 const REF = 'refs/heads/main';
-const IDENTITY = `https://github.com/${REPO}/${WORKFLOW}@${REF}`;
+const identityOf = repo => `https://github.com/${repo}/${WORKFLOW}@${REF}`;
+const IDENTITY = identityOf(REPO);
 const ISSUER = 'https://token.actions.githubusercontent.com';
 const PLATFORMS = { 'ubuntu-24.04': 'Linux/x86_64', 'macos-14': 'Darwin/arm64' };
 const FILES = ['probe.txt', 'probe.txt.sigstore.bundle', 'probe.txt.attestation.jsonl'];
@@ -52,16 +55,19 @@ export function validateProbeRun(run, jobs, { source, runId }) {
   }
 }
 
-export function validateProbeAttestation(results, { source, runId, attempt, artifactSha256 }) {
+// `repo` exists only so retained pre-rename verifier output can still be parsed;
+// qualifyPreTag never passes it.
+export function validateProbeAttestation(results, { source, runId, attempt, artifactSha256, repo = REPO }) {
+  const identity = identityOf(repo);
   if (!Array.isArray(results) || results.length !== 1) throw new Error('expected one verified probe attestation');
   const result = results[0]?.verificationResult;
   const cert = result?.signature?.certificate;
   const statement = result?.statement;
-  if (cert?.subjectAlternativeName !== IDENTITY || cert.issuer !== ISSUER ||
-      cert.buildSignerURI !== IDENTITY || cert.buildSignerDigest !== source ||
-      cert.sourceRepositoryURI !== `https://github.com/${REPO}` || cert.sourceRepositoryDigest !== source ||
+  if (cert?.subjectAlternativeName !== identity || cert.issuer !== ISSUER ||
+      cert.buildSignerURI !== identity || cert.buildSignerDigest !== source ||
+      cert.sourceRepositoryURI !== `https://github.com/${repo}` || cert.sourceRepositoryDigest !== source ||
       cert.sourceRepositoryRef !== REF || cert.runnerEnvironment !== 'github-hosted' ||
-      cert.runInvocationURI !== `https://github.com/${REPO}/actions/runs/${runId}/attempts/${attempt}` ||
+      cert.runInvocationURI !== `https://github.com/${repo}/actions/runs/${runId}/attempts/${attempt}` ||
       !Array.isArray(result.verifiedTimestamps) || result.verifiedTimestamps.length === 0 ||
       statement?.predicateType !== 'https://slsa.dev/provenance/v1' ||
       !Array.isArray(statement.subject) || statement.subject.length !== 1 ||

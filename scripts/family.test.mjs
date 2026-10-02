@@ -257,3 +257,23 @@ test('publisher preserves an existing PR with unrelated or altered work', t => {
     assert.equal(f.calls.filter(call => call.body).length, 0);
   }
 });
+test('members come from the forge unless a GitHub runner selects the public mirror', t => {
+  const { family } = fixture(t), repo = family.repos[1], saved = process.env.JANKURAI_FAMILY_SOURCE;
+  t.after(() => { if (saved === undefined) delete process.env.JANKURAI_FAMILY_SOURCE; else process.env.JANKURAI_FAMILY_SOURCE = saved; });
+  delete process.env.JANKURAI_FAMILY_SOURCE;
+  assert.equal(family.pinSource(repo), repo.hosted);
+  process.env.JANKURAI_FAMILY_SOURCE = 'hosted';
+  assert.equal(family.pinSource(repo), repo.hosted);
+  process.env.JANKURAI_FAMILY_SOURCE = 'mirror';
+  assert.equal(family.pinSource(repo), repo.github);
+  assert.equal(repo.github, 'https://github.com/neverhuman/jankurai-audit-core.git');
+  process.env.JANKURAI_FAMILY_SOURCE = 'https://example.invalid/core.git';
+  assert.throws(() => family.pinSource(repo), /hosted or mirror/);
+});
+test('pre-rename crate sources route to member mirrors and never capture the hub', t => {
+  const { family } = fixture(t);
+  assert.deepEqual(family.legacyCrateRoutes(), [
+    ['https://github.com/neverhuman/jankurai-core.git', 'https://github.com/neverhuman/jankurai-audit-core.git'],
+    ['https://www.github.com/neverhuman/jankurai-core.git', 'https://github.com/neverhuman/jankurai-audit-core.git'],
+  ]);
+});

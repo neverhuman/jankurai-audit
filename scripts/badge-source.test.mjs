@@ -40,3 +40,19 @@ test('updated hashes cannot turn an advisory, partial, dirty or regressed report
       report_sha256: createHash('sha256').update(body).digest('hex') }, baseline));
   }
 });
+
+test('badge provenance accepts the renamed hub and the retained pre-rename record, never a mix', () => {
+  const renamed = JSON.parse(JSON.stringify(provenance).replaceAll('github.com/neverhuman/jankurai/', 'github.com/neverhuman/jankurai-audit/')
+    .replace('"https://github.com/neverhuman/jankurai"', '"https://github.com/neverhuman/jankurai-audit"'));
+  assert.equal(renamed.audited_repository, 'https://github.com/neverhuman/jankurai-audit');
+  validateBadgeSource(text, renamed, baseline);
+  for (const change of [
+    value => { value.audited_repository = 'https://github.com/neverhuman/jankurai-audit'; },
+    value => { value.audited_repository = 'https://github.com/counterfeit/jankurai'; },
+    value => { value.source_quality_run = value.source_quality_run.replace('/jankurai/', '/jankurai-audit/'); },
+    value => { value.source_quality_run += '0/extra'; },
+  ]) {
+    const changed = { ...provenance }; change(changed);
+    assert.throws(() => validateBadgeSource(text, changed, baseline), /hosted badge provenance/);
+  }
+});

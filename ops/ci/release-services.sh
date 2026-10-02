@@ -5,7 +5,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 : "${GITHUB_REPOSITORY:?repository required}"
 : "${GITHUB_REF:?source ref required}"
 : "${GITHUB_SHA:?source commit required}"
-[[ "$GITHUB_REPOSITORY" == neverhuman/jankurai && "$GITHUB_REF" == refs/heads/* ]]
+# The hub was renamed from neverhuman/jankurai after v1.7.1; probes run only here.
+[[ "$GITHUB_REPOSITORY" == neverhuman/jankurai-audit && "$GITHUB_REF" == refs/heads/* ]]
 [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
 workflow="$GITHUB_REPOSITORY/.github/workflows/release-services.yml"
 identity="https://github.com/$workflow@$GITHUB_REF"
@@ -49,6 +50,7 @@ case "${1:-}" in
     reject verify_signature "$config/tampered.txt"
     reject verify_attestation "$config/tampered.txt" "$GITHUB_REPOSITORY" "$identity" "$GITHUB_SHA" "$GITHUB_REF"
     reject verify_attestation "$asset" neverhuman/jankurai-core "$identity" "$GITHUB_SHA" "$GITHUB_REF"
+    reject verify_attestation "$asset" neverhuman/jankurai "$identity" "$GITHUB_SHA" "$GITHUB_REF"
     reject verify_attestation "$asset" "$GITHUB_REPOSITORY" "https://github.com/$GITHUB_REPOSITORY/.github/workflows/release.yml@$GITHUB_REF" "$GITHUB_SHA" "$GITHUB_REF"
     reject verify_attestation "$asset" "$GITHUB_REPOSITORY" "$identity" 0000000000000000000000000000000000000000 "$GITHUB_REF"
     reject verify_attestation "$asset" "$GITHUB_REPOSITORY" "$identity" "$GITHUB_SHA" refs/tags/v1.7.0

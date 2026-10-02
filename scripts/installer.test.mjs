@@ -9,14 +9,16 @@ import test from 'node:test';
 
 const installer = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'jankurai-installer.sh');
 const sha256 = value => createHash('sha256').update(value).digest('hex');
-function fixture(t, platform = 'linux') {
+// `signer` is the repository the fixture assets were signed under; the installer
+// must derive the same identity from the requested repository and tag.
+function fixture(t, platform = 'linux', { version = '1.7.2', signer = 'neverhuman/jankurai-audit' } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'release-ci-test-')), tools = path.join(root, 'tools');
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(tools);
   const target = platform === 'linux' ? 'x86_64-unknown-linux-gnu' : 'aarch64-apple-darwin';
-  const stem = `jankurai-1.7.0-${target}`, asset = `${stem}.tar.gz`, commit = '4'.repeat(40);
-  const payload = { jankurai: '#!/bin/sh\nprintf "jankurai 1.7.0\\n"\n', 'family.lock': 'family fixture', 'Cargo.lock': 'cargo fixture', LICENSE: 'MIT' };
-  const provenance = { schema: 'jankurai.release/v1', repository: 'https://github.com/neverhuman/jankurai', commit, target, version: '1.7.0',
+  const stem = `jankurai-${version}-${target}`, asset = `${stem}.tar.gz`, commit = '4'.repeat(40);
+  const payload = { jankurai: `#!/bin/sh\nprintf "jankurai ${version}\\n"\n`, 'family.lock': 'family fixture', 'Cargo.lock': 'cargo fixture', LICENSE: 'MIT' };
+  const provenance = { schema: 'jankurai.release/v1', repository: `https://github.com/${signer}`, commit, target, version,
     family_lock_sha256: sha256(payload['family.lock']), cargo_lock_sha256: sha256(payload['Cargo.lock']) };
   const tool = (name, source) => fs.writeFileSync(path.join(tools, name), '#!/usr/bin/env node\n' + source, { mode: 0o755 });
   tool('uname', `console.log(process.argv[2] === '-s' ? '${platform === 'linux' ? 'Linux' : 'Darwin'}' : '${platform === 'linux' ? 'x86_64' : 'arm64'}');`);
@@ -25,7 +27,7 @@ function fixture(t, platform = 'linux') {
     if(a[2]!=='attestation' || a[3]!=='verify') throw new Error('API access forbidden');
     for(const key of ['GH_TOKEN','GITHUB_TOKEN','GH_ENTERPRISE_TOKEN','GITHUB_ENTERPRISE_TOKEN']) if(process.env[key]) throw new Error('credentials inherited');
     if(['--cert-identity','--cert-identity-regex','--signer-repo','--signer-workflow'].filter(flag=>a.includes(flag)).length!==1) throw new Error('mutually exclusive GitHub verification flags');
-    if(!a.includes('--bundle') || !a.includes('--deny-self-hosted-runners') || value('--cert-identity')!==process.env.FIXTURE_IDENTITY || value('--cert-oidc-issuer')!=='https://token.actions.githubusercontent.com' || value('--repo')!=='neverhuman/jankurai' || value('--source-ref')!=='refs/tags/v1.7.0' || value('--source-digest')!==process.env.FIXTURE_COMMIT || value('--signer-digest')!==process.env.FIXTURE_COMMIT) throw new Error('attestation identity mismatch');
+    if(!a.includes('--bundle') || !a.includes('--deny-self-hosted-runners') || value('--cert-identity')!==process.env.FIXTURE_IDENTITY || value('--cert-oidc-issuer')!=='https://token.actions.githubusercontent.com' || value('--repo')!==process.env.FIXTURE_REPO || value('--source-ref')!=='refs/tags/v'+process.env.FIXTURE_VERSION || value('--source-digest')!==process.env.FIXTURE_COMMIT || value('--signer-digest')!==process.env.FIXTURE_COMMIT) throw new Error('attestation identity mismatch');
     if(process.env.ATTESTATION_FAILURE) throw new Error('attestation rejected');`;
   const cosign = `const a=process.argv; if(a[a.indexOf('--certificate-identity')+1]!==process.env.FIXTURE_IDENTITY || a[a.indexOf('--certificate-oidc-issuer')+1]!=='https://token.actions.githubusercontent.com') throw new Error('wrong signature identity'); if(process.env.SIGNATURE_FAILURE) throw new Error('signature rejected');`;
   const archiveRoot = `gh_2.100.0_${platform === 'linux' ? 'linux_amd64' : 'macOS_arm64'}`;
@@ -60,7 +62,8 @@ function fixture(t, platform = 'linux') {
   const testInstaller = path.join(root, 'installer.sh'); fs.writeFileSync(testInstaller, source);
   const env = { ...process.env, PATH: tools + path.delimiter + process.env.PATH, FIXTURE_ROOT: root,
     GH_TOKEN: 'fixture-credential-must-not-be-used', GITHUB_TOKEN: 'fixture-credential-must-not-be-used',
-    FIXTURE_COMMIT: commit, FIXTURE_IDENTITY: 'https://github.com/neverhuman/jankurai/.github/workflows/release.yml@refs/tags/v1.7.0' };
+    FIXTURE_COMMIT: commit, FIXTURE_REPO: signer, FIXTURE_VERSION: version,
+    FIXTURE_IDENTITY: `https://github.com/${signer}/.github/workflows/release.yml@refs/tags/v${version}` };
   function pack(extra) {
     const stage = path.join(root, stem);
     fs.mkdirSync(stage, { recursive: true });
@@ -71,9 +74,9 @@ function fixture(t, platform = 'linux') {
     fs.writeFileSync(path.join(root, asset + '.sha256'), sha256(fs.readFileSync(path.join(root, asset))) + '  ' + asset + '\n');
     for (const suffix of ['.sigstore.bundle', '.attestation.jsonl']) fs.writeFileSync(path.join(root, asset + suffix), 'controlled verifier fixture');
   }
-  const run = (...args) => spawnSync('bash', [testInstaller, '--tag', 'v1.7.0', ...args], { env, encoding: 'utf8' });
+  const run = (...args) => spawnSync('bash', [testInstaller, '--tag', `v${version}`, ...args], { env, encoding: 'utf8' });
   const install = (...args) => run('--verify-only', ...args);
-  return { root, asset, payload, provenance, env, pack, install, run, ghArchive, cosignAsset };
+  return { root, asset, payload, provenance, env, pack, install, run, ghArchive, cosignAsset, version };
 }
 test('valid asset requires both exact workflow verification identities', t => {
   const f = fixture(t); f.pack(); const result = f.install();
@@ -125,8 +128,38 @@ test('installation atomically replaces an existing binary only after verificatio
   assert.notEqual(f.run('--install-dir', dir).status, 0); assert.equal(fs.readFileSync(installed, 'utf8'), 'existing');
   f.payload.jankurai = '#!/bin/sh\nexit 1\n'; f.pack();
   assert.notEqual(f.run('--install-dir', dir).status, 0); assert.equal(fs.readFileSync(installed, 'utf8'), 'existing');
-  f.payload.jankurai = '#!/bin/sh\nprintf "jankurai 1.7.0\\n"\n'; f.pack();
+  f.payload.jankurai = `#!/bin/sh\nprintf "jankurai ${f.version}\\n"\n`; f.pack();
   const result = f.run('--install-dir', dir); assert.equal(result.status, 0, result.stderr);
   assert.equal(fs.readFileSync(installed, 'utf8'), f.payload.jankurai);
   assert.deepEqual(fs.readdirSync(dir), ['jankurai']);
+});
+
+// Releases up to v1.7.1 were signed before the hub was renamed, so their
+// certificates name neverhuman/jankurai; later releases name jankurai-audit.
+for (const [version, repo] of [['1.7.1', undefined], ['1.7.0', 'neverhuman/jankurai'], ['1.7.1', 'neverhuman/jankurai-audit']]) {
+  test(`v${version} from ${repo ?? 'the default repository'} verifies under the pre-rename identity`, t => {
+    const f = fixture(t, 'linux', { version, signer: 'neverhuman/jankurai' }); f.pack();
+    const result = repo ? f.install('--repo', repo) : f.install();
+    assert.equal(result.status, 0, result.stderr);
+  });
+}
+test('v1.7.2 requested under the old repository name verifies under the renamed identity', t => {
+  const f = fixture(t); f.pack();
+  const result = f.install('--repo', 'neverhuman/jankurai'); assert.equal(result.status, 0, result.stderr);
+});
+test('a release after v1.7.1 signed under the pre-rename identity is rejected', t => {
+  const f = fixture(t, 'linux', { version: '1.7.2', signer: 'neverhuman/jankurai' }); f.pack();
+  const result = f.install(); assert.notEqual(result.status, 0); assert.match(result.stderr, /wrong signature identity/);
+});
+test('v1.7.1 signed under the renamed identity is rejected', t => {
+  const f = fixture(t, 'linux', { version: '1.7.1', signer: 'neverhuman/jankurai-audit' }); f.pack();
+  const result = f.install(); assert.notEqual(result.status, 0); assert.match(result.stderr, /wrong signature identity/);
+});
+test('provenance naming the other hub repository is rejected', t => {
+  const f = fixture(t); f.provenance.repository = 'https://github.com/neverhuman/jankurai'; f.pack();
+  const result = f.install(); assert.notEqual(result.status, 0); assert.match(result.stderr, /release provenance mismatch/);
+});
+test('another repository is verified as itself at any version', t => {
+  const f = fixture(t, 'linux', { version: '1.7.1', signer: 'example/fork' }); f.pack();
+  const result = f.install('--repo', 'example/fork'); assert.equal(result.status, 0, result.stderr);
 });

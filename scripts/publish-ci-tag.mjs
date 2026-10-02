@@ -22,7 +22,7 @@ function api(endpoint, body) {
 export function publishCiTag(env = process.env, request = api) {
   const { GITHUB_EVENT_NAME: event, GITHUB_REF: ref, GITHUB_SHA: sha,
     GITHUB_REPOSITORY: repository, GITHUB_RUN_ID: runId, GITHUB_RUN_ATTEMPT: attempt } = env;
-  if (event !== 'push' || ref !== 'refs/heads/main' || repository !== 'neverhuman/jankurai' ||
+  if (event !== 'push' || ref !== 'refs/heads/main' || repository !== 'neverhuman/jankurai-audit' ||
       !/^[a-f0-9]{40}$/.test(sha ?? '') || !/^[1-9]\d*$/.test(runId ?? '') ||
       !/^[1-9]\d*$/.test(attempt ?? '')) throw new Error('CI tags require the hub main push workflow');
   const prefix = `repos/${repository}`;

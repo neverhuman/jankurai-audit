@@ -12,7 +12,7 @@ try {
   fs.mkdirSync(dist, { recursive: true });
   const output = args => run(args, { cwd: hub, capture: true });
   const provenance = { schema: 'jankurai.release/v1', version, target,
-    repository: 'https://github.com/neverhuman/jankurai', commit: output(['git', 'rev-parse', 'HEAD']),
+    repository: 'https://github.com/neverhuman/jankurai-audit', commit: output(['git', 'rev-parse', 'HEAD']),
     family_lock_sha256: digest(path.join(hub, 'family.lock')), cargo_lock_sha256: digest(path.join(hub, 'Cargo.lock')),
     rustc: output(['rustc', '--version']), cargo: output(['cargo', '--version']), node: process.version,
     workflow_run: process.env.GITHUB_RUN_ID ?? null };

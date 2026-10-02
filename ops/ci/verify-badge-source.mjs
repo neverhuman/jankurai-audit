@@ -5,6 +5,10 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const digest = text => createHash('sha256').update(text).digest('hex');
+// The hub was renamed from neverhuman/jankurai to neverhuman/jankurai-audit after
+// v1.7.1. A retained record keeps the name it was captured under, so both are
+// accepted, but its run and job links must name the same repository.
+const BADGE_REPOSITORIES = ['https://github.com/neverhuman/jankurai-audit', 'https://github.com/neverhuman/jankurai'];
 
 export function validateBadgeSource(text, provenance, baselineText) {
   const report = JSON.parse(text), decision = report.decision, ratchet = decision?.ratchet;
@@ -13,8 +17,10 @@ export function validateBadgeSource(text, provenance, baselineText) {
   for (const key of ['audited_commit', 'audited_tree', 'auditor_core_revision']) {
     if (!/^[a-f0-9]{40}$/.test(provenance[key])) throw new Error(`invalid badge ${key}`);
   }
-  if (provenance.audited_repository !== 'https://github.com/neverhuman/jankurai' ||
-      !/^https:\/\/github\.com\/neverhuman\/jankurai\/actions\/runs\/[1-9]\d*$/.test(provenance.source_quality_run) ||
+  const repository = provenance.audited_repository;
+  if (!BADGE_REPOSITORIES.includes(repository) || typeof provenance.source_quality_run !== 'string' ||
+      !provenance.source_quality_run.startsWith(repository + '/actions/runs/') ||
+      !/^\/actions\/runs\/[1-9]\d*$/.test(provenance.source_quality_run.slice(repository.length)) ||
       !provenance.source_quality_job?.startsWith(provenance.source_quality_run + '/job/') ||
       !/\/job\/[1-9]\d*$/.test(provenance.source_quality_job) ||
       !Number.isSafeInteger(provenance.artifact_id) || provenance.artifact_id < 1 ||

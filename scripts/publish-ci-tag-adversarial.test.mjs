@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {publishCiTag} from './publish-ci-tag.mjs';
 const sha='a'.repeat(40), tag=`refs/tags/ci-${sha}`;
-const env={GITHUB_EVENT_NAME:'push',GITHUB_REF:'refs/heads/main',GITHUB_SHA:sha,GITHUB_REPOSITORY:'neverhuman/jankurai',GITHUB_RUN_ID:'1',GITHUB_RUN_ATTEMPT:'2'};
+const env={GITHUB_EVENT_NAME:'push',GITHUB_REF:'refs/heads/main',GITHUB_SHA:sha,GITHUB_REPOSITORY:'neverhuman/jankurai-audit',GITHUB_RUN_ID:'1',GITHUB_RUN_ATTEMPT:'2'};
 function probe(name,option={}) {
  let writes=0,reads=0,calls=0;
  const request=(endpoint,body)=>{

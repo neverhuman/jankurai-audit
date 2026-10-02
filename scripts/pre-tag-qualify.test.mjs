@@ -4,10 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { qualifyPreTag, validateProbeAttestation } from './pre-tag-qualify.mjs';
+import { REPO, qualifyPreTag, validateProbeAttestation } from './pre-tag-qualify.mjs';
 
 const SOURCE = '0123456789abcdef0123456789abcdef01234567';
-const CERT = 'https://github.com/neverhuman/jankurai/.github/workflows/release-services.yml@refs/heads/main';
+const CERT = 'https://github.com/neverhuman/jankurai-audit/.github/workflows/release-services.yml@refs/heads/main';
 const PLATFORMS = { 'ubuntu-24.04': 'Linux/x86_64', 'macos-14': 'Darwin/arm64' };
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
@@ -21,7 +21,7 @@ function fixture(t) {
     fs.writeFileSync(path.join(dir, 'probe.txt'), `Non-release signing probe\nsource=${SOURCE}\nplatform=${native}\n`);
     for (const suffix of ['sigstore.bundle', 'attestation.jsonl']) fs.writeFileSync(path.join(dir, `probe.txt.${suffix}`), '{}\n');
   }
-  const run = { id: 123, repository: { full_name: 'neverhuman/jankurai' }, head_repository: { full_name: 'neverhuman/jankurai' },
+  const run = { id: 123, repository: { full_name: 'neverhuman/jankurai-audit' }, head_repository: { full_name: 'neverhuman/jankurai-audit' },
     head_sha: SOURCE, head_branch: 'main', path: '.github/workflows/release-services.yml', event: 'workflow_dispatch',
     status: 'completed', conclusion: 'success', run_attempt: 2 };
   const jobs = Object.keys(PLATFORMS).map((platform, i) => ({ name: `verify (${platform})`, id: 10 + i,
@@ -44,14 +44,14 @@ function fixture(t) {
     }
     assert.deepEqual(args.slice(0, 2), ['attestation', 'verify']);
     for (const flag of ['--signer-digest', '--source-digest']) assert.equal(args[args.indexOf(flag) + 1], SOURCE);
-    assert.equal(args[args.indexOf('--repo') + 1], 'neverhuman/jankurai');
+    assert.equal(args[args.indexOf('--repo') + 1], 'neverhuman/jankurai-audit');
     assert.ok(args.includes('--deny-self-hosted-runners'));
     const result = { signature: { certificate: {
       subjectAlternativeName: CERT, issuer: 'https://token.actions.githubusercontent.com',
       buildSignerURI: CERT, buildSignerDigest: SOURCE,
-      sourceRepositoryURI: 'https://github.com/neverhuman/jankurai', sourceRepositoryDigest: SOURCE,
+      sourceRepositoryURI: 'https://github.com/neverhuman/jankurai-audit', sourceRepositoryDigest: SOURCE,
       sourceRepositoryRef: 'refs/heads/main', runnerEnvironment: 'github-hosted',
-      runInvocationURI: 'https://github.com/neverhuman/jankurai/actions/runs/123/attempts/2',
+      runInvocationURI: 'https://github.com/neverhuman/jankurai-audit/actions/runs/123/attempts/2',
     } }, verifiedTimestamps: [{ type: 'Tlog' }], statement: { predicateType: 'https://slsa.dev/provenance/v1',
       subject: [{ digest: { sha256: hash(fs.readFileSync(args[2])) } }] } };
     settings.mutateAttestation(result);
@@ -100,7 +100,7 @@ for (const [field, value] of Object.entries({
   issuer: 'https://example.invalid', buildSignerURI: CERT.replace('release-services', 'release'),
   buildSignerDigest: 'a'.repeat(40), sourceRepositoryDigest: 'a'.repeat(40),
   sourceRepositoryURI: 'https://github.com/counterfeit/repository', sourceRepositoryRef: 'refs/tags/v1.8.0',
-  runnerEnvironment: 'self-hosted', runInvocationURI: 'https://github.com/neverhuman/jankurai/actions/runs/123/attempts/1',
+  runnerEnvironment: 'self-hosted', runInvocationURI: 'https://github.com/neverhuman/jankurai-audit/actions/runs/123/attempts/1',
 })) test(`refuse mismatched verified certificate ${field}`, t => {
   const f = fixture(t); f.settings.mutateAttestation = result => result.signature.certificate[field] = value;
   assert.throws(f.qualify, /binding mismatch/);
@@ -137,10 +137,18 @@ test('an expected source and run must come from the caller, not evidence files',
   assert.throws(() => qualifyPreTag(f.root, { source: SOURCE, runId: 0 }), /expected source SHA and run ID/);
 });
 
+test('qualification is pinned to the renamed hub repository', () => {
+  assert.equal(REPO, 'neverhuman/jankurai-audit');
+});
+
 // Retained output from actual GH2.100 verification, source fb97/run34487611925.
-// This parser regression does not replace live signature verification.
+// It was signed before the hub was renamed, so its certificate names
+// neverhuman/jankurai. This parser regression does not replace live signature
+// verification, and that old identity can no longer qualify a tag.
 test('parse the pinned GitHub CLI actual verified certificate representation', () => {
   const result = JSON.parse(fs.readFileSync(new URL('./fixtures/pretag-gh-2.100.0.json', import.meta.url), 'utf8'));
-  validateProbeAttestation(result, { source: 'fb97e59686fb4c6e1f27b4d567adf8d7606bc881', runId: 34487611925, attempt: 1,
-    artifactSha256: 'ffd51771fd6c328a7a73a829acd0a2cbc18ccd3e3c09fa04c4cf0fc53d61a798' });
+  const binding = { source: 'fb97e59686fb4c6e1f27b4d567adf8d7606bc881', runId: 34487611925, attempt: 1,
+    artifactSha256: 'ffd51771fd6c328a7a73a829acd0a2cbc18ccd3e3c09fa04c4cf0fc53d61a798' };
+  validateProbeAttestation(result, { ...binding, repo: 'neverhuman/jankurai' });
+  assert.throws(() => validateProbeAttestation(result, binding), /binding mismatch/);
 });

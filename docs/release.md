@@ -89,6 +89,12 @@ node scripts/pre-tag-qualify.mjs <downloaded-run-directory> <run-id>
 
 Older GitHub CLI versions lack the required source-digest flags and are refused.
 
+Releases are signed by the workflows of `neverhuman/jankurai-audit`. v1.7.1 and
+earlier were signed before the rename, as `neverhuman/jankurai`; the installer
+picks the matching identity per tag. The probe evidence, why no human signing
+step is needed, and the exact owner steps for cutting a release from the mirror
+are in [forge-authority.md](forge-authority.md#release-identity-after-the-rename).
+
 Build jobs use read-only tokens and upload unsigned assets. A fresh signing job
 validates the complete unsigned inventory and signs it without building or
 executing the candidate products. Separate read-only jobs verify the signatures

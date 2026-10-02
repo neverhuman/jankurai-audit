@@ -14,7 +14,7 @@ and the integration job is what builds the fused auditor. The check is static
 policy and structure. Application pentests, cloud IAM, Terraform or Kubernetes
 posture, and runtime authorization are outside it.
 
-[**Current release v1.7.2**](https://github.com/neverhuman/jankurai/releases/tag/v1.7.2)
+[**Current release v1.7.2**](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.2)
 · [CI](https://github.com/neverhuman/jankurai-audit/actions/workflows/ci.yml)
 · [Install](docs/install.md)
 · [AGENTS.md](AGENTS.md)
@@ -52,7 +52,7 @@ The locked auditor's rule catalog is
 Linux x86-64 and Apple Silicon macOS:
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai-audit/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
 # jankurai 1.7.2

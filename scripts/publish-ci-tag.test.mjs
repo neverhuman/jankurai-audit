@@ -4,7 +4,7 @@ import { publishCiTag } from './publish-ci-tag.mjs';
 
 const sha = 'a'.repeat(40), tag = `refs/tags/ci-${sha}`;
 const env = { GITHUB_EVENT_NAME: 'push', GITHUB_REF: 'refs/heads/main', GITHUB_SHA: sha,
-  GITHUB_REPOSITORY: 'neverhuman/jankurai', GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2' };
+  GITHUB_REPOSITORY: 'neverhuman/jankurai-audit', GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2' };
 function fixture(options = {}) {
   const writes = [], calls = [];
   let existing = options.existing;
@@ -13,7 +13,7 @@ function fixture(options = {}) {
     calls.push(endpoint);
     if (body) {
       writes.push({ endpoint, body });
-      assert.equal(endpoint, 'repos/neverhuman/jankurai/git/refs');
+      assert.equal(endpoint, 'repos/neverhuman/jankurai-audit/git/refs');
       assert.deepEqual(body, { ref: tag, sha });
       existing = { ref: tag, object };
       return existing;
@@ -38,7 +38,7 @@ test('successful exact current-attempt aggregate publishes and reads back a new 
   const f = fixture();
   assert.deepEqual(publishCiTag(env, f.request), { ref: tag, sha, created: true });
   assert.equal(f.writes.length, 1);
-  assert.equal(f.calls.at(-1), `repos/neverhuman/jankurai/git/ref/tags/ci-${sha}`);
+  assert.equal(f.calls.at(-1), `repos/neverhuman/jankurai-audit/git/ref/tags/ci-${sha}`);
 });
 test('matching existing tag is an immutable no-op', () => {
   const f = fixture({ existing: { ref: tag, object: { type: 'commit', sha } } });
@@ -46,7 +46,7 @@ test('matching existing tag is an immutable no-op', () => {
   assert.equal(f.writes.length, 0);
 });
 for (const change of [{ GITHUB_EVENT_NAME: 'pull_request' }, { GITHUB_REF: 'refs/heads/repair' },
-  { GITHUB_REPOSITORY: 'fork/jankurai' }, { GITHUB_SHA: '' }, { GITHUB_RUN_ID: '0' }, { GITHUB_RUN_ATTEMPT: '1x' }]) {
+  { GITHUB_REPOSITORY: 'fork/jankurai' }, { GITHUB_REPOSITORY: 'neverhuman/jankurai' }, { GITHUB_SHA: '' }, { GITHUB_RUN_ID: '0' }, { GITHUB_RUN_ATTEMPT: '1x' }]) {
   test(`reject context ${JSON.stringify(change)} before API access`, () => {
     const f = fixture();
     assert.throws(() => publishCiTag({ ...env, ...change }, f.request), /main push/);

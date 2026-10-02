@@ -14,6 +14,7 @@ try {
     const { update } = await import('./family-update.mjs');
     const family = new Family(path.dirname(path.dirname(fileURLToPath(import.meta.url))));
     if (command === 'status') family.status();
+    else if (command === 'mirror-routes') for (const [legacy, mirror] of family.legacyCrateRoutes()) console.log(`${legacy} ${mirror}`);
     else if (command === 'validate') console.log('validate-family: ok');
     else operation(family.hub, (tx) => {
       switch (command) {
@@ -24,7 +25,7 @@ try {
         case 'version': family.bootstrap(); family.fuse(); run(['cargo', 'run', '--locked', '-p', 'jankurai', '--', '--version'], { cwd: family.fusion }); break;
         case 'fuse': family.bootstrap(); family.fuse(); break;
         case 'pull': update(family, {}, tx); break;
-        default: throw new Error('usage: family.sh {setup|pull|build|check|status|fuse|validate|recover} [--release] [--target triple]');
+        default: throw new Error('usage: family.sh {setup|pull|build|check|status|fuse|validate|mirror-routes|recover} [--release] [--target triple]');
       }
     });
   }

@@ -10,7 +10,7 @@ function fixture(t) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'release-publish-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   for (const file of ['binary.tar.gz', 'binary.tar.gz.sha256']) fs.writeFileSync(path.join(directory, file), file);
-  const options = { directory, repository: 'neverhuman/jankurai', tag: 'v1.7.0', version: '1.7.0', commit: 'a'.repeat(40), notes: 'Reviewed release notes' };
+  const options = { directory, repository: 'neverhuman/jankurai-audit', tag: 'v1.7.0', version: '1.7.0', commit: 'a'.repeat(40), notes: 'Reviewed release notes' };
   const env = { GITHUB_EVENT_NAME: 'push', GITHUB_REF: `refs/tags/${options.tag}`, GITHUB_SHA: options.commit,
     GITHUB_REPOSITORY: options.repository, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', GITHUB_JOB: 'promote' };
   const state = { release: null, assets: [], mutations: [], uploads: [], failUpload: false, tag: options.commit,
@@ -85,7 +85,7 @@ test('promotion changes only flags after every exact prerequisite succeeds', t =
   const assets = structuredClone(f.state.assets);
   f.state.mutations = []; f.state.uploads = [];
   assert.equal(f.promote().prerelease, false);
-  assert.deepEqual(f.state.mutations, [{ endpoint: 'repos/neverhuman/jankurai/releases/7', method: 'PATCH',
+  assert.deepEqual(f.state.mutations, [{ endpoint: 'repos/neverhuman/jankurai-audit/releases/7', method: 'PATCH',
     body: { prerelease: false, make_latest: 'true' } }]);
   assert.deepEqual(f.state.assets, assets); assert.deepEqual(f.state.uploads, []);
   f.state.mutations = [];
@@ -186,5 +186,13 @@ test('an older success cannot hide a later failure or malformed job identity', t
   ]) {
     const f = fixture(t); f.run(); f.state.mutations = []; change(f);
     assert.throws(f.promote); assert.deepEqual(f.state.mutations, []); assert.equal(f.state.release.prerelease, true);
+  }
+});
+test('publication and promotion refuse the pre-rename hub repository', t => {
+  for (const repository of ['neverhuman/jankurai', 'fork/jankurai-audit']) {
+    const f = fixture(t); f.options.repository = repository; f.env.GITHUB_REPOSITORY = repository;
+    assert.throws(f.run, /invalid release identity/);
+    assert.throws(f.promote, /invalid release identity/);
+    assert.deepEqual(f.state.mutations, []);
   }
 });

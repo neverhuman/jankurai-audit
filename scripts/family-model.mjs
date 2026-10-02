@@ -75,9 +75,32 @@ export class Family {
         gitText(directory, 'rev-parse', '--show-toplevel') !== directory) throw new Error(`${directory}: expected a canonical primary checkout`);
     return true;
   }
+  // Where member checkouts and their pin tags come from. The forge is the
+  // authority and the default. GitHub-hosted runners cannot read the private
+  // forge, so ops/ci/github-setup.sh selects the public mirror. Every pin is
+  // checked against its locked commit either way: the source decides
+  // availability, never trust.
+  pinSource(repo) {
+    const source = process.env.JANKURAI_FAMILY_SOURCE || 'hosted';
+    if (source === 'hosted') return repo.hosted;
+    if (source === 'mirror') return repo.github;
+    throw new Error('JANKURAI_FAMILY_SOURCE must be hosted or mirror');
+  }
+  // Members' Cargo git routes still name the pre-rename GitHub repositories,
+  // some of which no longer serve Git. On a runner that resolves them from
+  // GitHub, each is rewritten to its mirror. Revisions are still locked.
+  legacyCrateRoutes() {
+    const routes = [];
+    for (const repo of this.components()) {
+      const legacy = crateSource(this.manifest, repo);
+      if (legacy === repo.github) continue;
+      routes.push([legacy, repo.github], [legacy.replace('https://github.com/', 'https://www.github.com/'), repo.github]);
+    }
+    return routes;
+  }
   fetchPin(repo) {
     const pin = this.pins.get(repo.name), directory = this.path(repo);
-    git(directory, ['fetch', '--no-tags', repo.hosted, `refs/tags/${pin.tag}:refs/tags/${pin.tag}`], { env: buildEnvironment() });
+    git(directory, ['fetch', '--no-tags', this.pinSource(repo), `refs/tags/${pin.tag}:refs/tags/${pin.tag}`], { env: buildEnvironment() });
     if (gitText(directory, 'rev-parse', `refs/tags/${pin.tag}^{commit}`) !== pin.commit) throw new Error(`${repo.name}: immutable tag differs from lock`);
   }
   bootstrap(restore = false) {
@@ -86,7 +109,7 @@ export class Family {
     for (const repo of this.components()) {
       const directory = this.path(repo), pin = this.pins.get(repo.name);
       if (!exists(directory)) {
-        run(['git', 'clone', '--no-checkout', '--origin', 'origin', repo.hosted, directory], { env: buildEnvironment() });
+        run(['git', 'clone', '--no-checkout', '--origin', 'origin', this.pinSource(repo), directory], { env: buildEnvironment() });
         this.fetchPin(repo);
         git(directory, ['checkout', '--detach', pin.commit]);
       } else if (restore) this.fetchPin(repo);

@@ -22,7 +22,7 @@ function upload(repository, tag, file) {
   if (result.status !== 0) throw new Error('release upload failed; verified draft assets are preserved for retry');
 }
 function releaseContext({ repository, tag, commit, version, directory }, api) {
-  if (repository !== 'neverhuman/jankurai' || !/^\d+\.\d+\.\d+$/.test(version) ||
+  if (repository !== 'neverhuman/jankurai-audit' || !/^\d+\.\d+\.\d+$/.test(version) ||
       tag !== `v${version}` || !/^[0-9a-f]{40}$/.test(commit)) throw new Error('invalid release identity');
   const prefix = `repos/${repository}`;
   const verifyTag = () => {

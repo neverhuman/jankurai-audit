@@ -1,11 +1,11 @@
 # Install Jankurai
 
 The current published release is
-[v1.7.2](https://github.com/neverhuman/jankurai/releases/tag/v1.7.2).
+[v1.7.2](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.2).
 It provides native Linux x86-64 and Apple Silicon macOS binaries.
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai-audit/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
 ```
@@ -56,7 +56,7 @@ authorization.
 ## Tuiwright
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2 --product tuiwright'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai-audit/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2 --product tuiwright'
 tuiwright --version
 ```
 
@@ -78,7 +78,7 @@ provenance describes the workflow that built the platform-independent npm asset:
 
 ```bash
 set -euo pipefail
-repo=neverhuman/jankurai
+repo=neverhuman/jankurai-audit
 tag=v1.7.2
 package=jankurai-ux-qa-1.7.2.tgz
 provenance=provenance-x86_64-unknown-linux-gnu.json
@@ -103,6 +103,12 @@ for file in "$package" "$provenance"; do
     --signer-digest "$commit" --source-digest "$commit" --source-ref "refs/tags/$tag"
 done
 ```
+
+The hub repository was renamed from `neverhuman/jankurai` to
+`neverhuman/jankurai-audit` after v1.7.1. Signatures keep the name they were made
+under, so to verify v1.7.1 or earlier by hand set `repo=neverhuman/jankurai`
+(downloads from the old name redirect). The installer chooses the right identity
+by itself.
 
 Only after every verification command succeeds:
 

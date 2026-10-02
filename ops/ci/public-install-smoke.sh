@@ -36,7 +36,7 @@ anonymous bash -c "$install_command"
 cmp "$binary" "$smoke/first-install"
 # Verify the installer is also available as a release asset (issue #16).
 anonymous curl --proto '=https' --tlsv1.2 -fsSL \
-  "https://github.com/neverhuman/jankurai/releases/download/$RELEASE_TAG/jankurai-installer.sh" \
+  "https://github.com/neverhuman/jankurai-audit/releases/download/$RELEASE_TAG/jankurai-installer.sh" \
   -o "$smoke/installer.sh"
 cmp jankurai-installer.sh "$smoke/installer.sh"
 anonymous bash "$smoke/installer.sh" --tag "$RELEASE_TAG" --product tuiwright

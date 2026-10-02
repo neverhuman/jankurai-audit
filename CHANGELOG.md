@@ -25,6 +25,13 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
   `vars.JANKURAI_GITHUB_AUTHORITY`, so a mirror skips them instead of failing.
   `docs/forge-authority.md` records the full posture, the manifest path the forge
   must add to `split_manifests`, and the follow-up work in the member repositories.
+- Releases are signed as `neverhuman/jankurai-audit` from v1.7.2. The release
+  guards, the signing probe qualification, the release provenance and the public
+  install smoke name the renamed repository. `jankurai-installer.sh` defaults to
+  it and still verifies v1.7.1 and earlier under their original
+  `neverhuman/jankurai` identity. Release and CI jobs on GitHub take members, pin
+  tags and the members' pre-rename Cargo git sources from the public mirrors
+  (`JANKURAI_FAMILY_SOURCE=mirror`), because runners cannot read the forge.
 
 ### Fixed
 
