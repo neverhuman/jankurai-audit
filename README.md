@@ -20,7 +20,7 @@ posture, and runtime authorization are outside it.
 · [AGENTS.md](AGENTS.md)
 
 The authority for this family is the hosted forge: `main` of each
-`root/jankurai*` on `git.neverhuman.org` is the source of truth and what gets
+`root/jankurai*` on the forge is the source of truth and what gets
 deployed. The `neverhuman/jankurai-audit*` repositories on GitHub are mirrors of
 it, so pull requests go to the forge and `<repo>/required` there is the gate.
 See [docs/forge-authority.md](docs/forge-authority.md).
@@ -92,7 +92,7 @@ installs `v1.7.1`, and omitting `fail-under` uses 85. Leave `plan` empty.
 ## Contributor clone
 
 ```sh
-git clone https://git.neverhuman.org/git/root/jankurai.git
+git clone <forge>/root/jankurai.git   # the hub's `hosted` URL in repos.manifest.toml
 cd jankurai
 bash scripts/family.sh setup
 ```

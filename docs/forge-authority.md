@@ -1,7 +1,7 @@
 # Forge authority and GitHub mirrors
 
-Owner decision 2026-09-30: the Jankurai family's authority is the hosted forge.
-`main` of each `root/<repo>` on `git.neverhuman.org` is the source of truth and
+The Jankurai family's authority is the hosted forge.
+`main` of each `root/<repo>` on the forge is the source of truth and
 what gets deployed. `github.com/neverhuman/*` is a mirror of it.
 
 `repos.manifest.toml` (schema 3.0.0, the authority manifest in this hub) records
@@ -31,7 +31,7 @@ present on every `[[repo]]`: `github_slug`, `jeryu_slug`, `mirror_github_main`.
 
 ## Mirror names
 
-The old `neverhumanbot/jankurai-*` repositories cannot be transferred, so the
+The older personal-account `jankurai-*` repositories cannot be transferred, so the
 org mirror carries the hub's prefix:
 
 | forge | GitHub mirror |
@@ -99,7 +99,7 @@ needs, as its own change:
   `Cargo.lock` sources in `jankurai-core`, `jankurai-tools-analyzers`,
   `jankurai-tools-dedup` and `jankurai-tools-fleet` still name
   `github.com/neverhuman/jankurai-tools-{kernel,dedup,analyzers,fleet,guard,proof}`,
-  which are the renamed, partly git-disabled `neverhumanbot` repositories. They
+  which are the older, partly git-disabled personal-account repositories. They
   must be repointed at `neverhuman/jankurai-audit-tools-*` at the same revs, the
   lockfiles regenerated, and the git `insteadOf` rewrite dropped from the
   `family.toml` setup hooks. The hub's fusion `[patch]` keys are generated from

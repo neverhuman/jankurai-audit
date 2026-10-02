@@ -40,13 +40,11 @@ is used only outside that process to select eligible revisions.
 Publication parses bounded lock artifacts and writes Git blobs through the API;
 it never checks out or executes candidate component code with that token.
 
-The supplied token expires **October 8, 2026**. As of 2026-09-25 the hourly
-`rotation` job is red because 14 or fewer days remain. That failure is the
-closed path. Do not clear it by raising the 14-day threshold, deleting the
-job, or writing a later date than the new token actually expires.
-The check still fails when the remaining whole days are 14 or fewer. A missing,
-unpadded, or impossible date fails closed and is not replaced with
-`2026-10-08`.
+The hourly `rotation` job fails while `FAMILY_AUTOMATION_TOKEN_EXPIRES` is 14
+or fewer whole days away. That failure is the closed path. Do not clear it by
+raising the 14-day threshold, deleting the job, or writing a later date than the
+new token actually expires. A missing, unpadded, or impossible date fails closed
+and is never replaced with a default.
 
 Maintainer rotation, in order:
 
@@ -69,13 +67,8 @@ Maintainer rotation, in order:
    runs. If it opens a pull request, the diff may contain only `family.lock`
    and `Cargo.lock`. Wait for `jankurai/required` on that head. The later
    hourly merge job squashes it only when those gates pass.
-6. Finish before 2026-10-08. After that date a still-valid-looking variable
-   of `2026-10-08` keeps the job red, which is the intended result.
-
-`PUT /repos/neverhuman/{jankurai-action,jankurai-audit-tools-tui}/collaborators/jepsontaylor`
-with `permission=pull` returned HTTP 422 `Cannot assign jepsontaylor permission of read`
-on 2026-09-25. Both repositories still list that account as write. The hub
-repository still lists it as read. This change does not delete the collaborator.
+6. Finish before the old token expires. After that date the old variable
+   keeps the job red, which is the intended result.
 
 A token-authenticated PR allows normal CI to run automatically, as described in
 [GitHub's workflow trigger documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
