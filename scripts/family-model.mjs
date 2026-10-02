@@ -12,6 +12,8 @@ const FORGE = 'jeryu';
 const HOSTED_BASE = 'https://git.neverhuman.org';
 const MIRROR_BASE = 'https://github.com';
 // The hub mirrors as <prefix>; every other member as <prefix>-<suffix>.
+// The git source members' Cargo.toml files depend on for a sibling crate.
+const crateSource = (manifest, repo) => `${MIRROR_BASE}/${manifest.public_owner}/${repo.name}.git`;
 const mirrorRepoName = (manifest, name) => (manifest.mirror_repo_override ?? {})[name]
   ?? `${manifest.mirror_repo_prefix}${name.slice(manifest.family.length)}`;
 // Disk receipts cannot authorize a copy imported by a different process.
@@ -121,8 +123,12 @@ export class Family {
         const relative = `components/${repo.name}/${member}`;
         const name = readToml(path.join(directory, member, 'Cargo.toml')).package.name;
         members.push(relative);
-        if (!patches.has(repo.github)) patches.set(repo.github, []);
-        patches.get(repo.github).push([name, relative]);
+        // Members' Cargo git routes still name the pre-rename repositories
+        // (github.com/<public_owner>/<repo>.git, see docs/forge-authority.md),
+        // so the fusion patches that source, not the mirror URL.
+        const source = crateSource(this.manifest, repo);
+        if (!patches.has(source)) patches.set(source, []);
+        patches.get(source).push([name, relative]);
       }
     }
     let cargo = `[workspace]\nresolver = "2"\nmembers = ${JSON.stringify(members, null, 2)}\n`;
