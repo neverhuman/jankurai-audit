@@ -23,7 +23,7 @@ function validateTree(root) {
     const file = path.join(root, relative);
     if (!exists(file) || !fs.statSync(file).isFile() || relative.startsWith('conformance/fixtures/')) continue;
     if (path.basename(file) === 'Cargo.toml') validateDependencies(file, root);
-    if (relative.startsWith('.github/workflows/') || relative === 'action.yml') {
+    if (relative === 'action.yml') {
       for (const [, use] of fs.readFileSync(file, 'utf8').matchAll(/\buses:\s*["']?([^\s"'#]+)/g)) {
         if (!use.startsWith('./') && !/^[^@]+@[a-f0-9]{40}$/.test(use)) throw new Error(`${file}: unpinned action ${use}`);
       }

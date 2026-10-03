@@ -19,5 +19,4 @@ install_release() {
   "$install_root/$binary" --version
 }
 install_release gitleaks/gitleaks 8.21.2 gitleaks x64
-install_release rhysd/actionlint 1.7.8 actionlint amd64
 install_release anchore/grype 0.99.0 grype amd64

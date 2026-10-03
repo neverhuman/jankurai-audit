@@ -7,8 +7,7 @@ schema_version = "1.0.0"
 # copy-code, language bad-behavior, the jankurai-security dependency lane, etc.)
 # have nothing to run here and are explicitly `disabled`. The tools that DO
 # apply to a control-plane-only hub all adopt the single ratchet audit command
-# that CI runs and uploads as repo-score evidence (see ops/ci/tool-adoption.sh
-# and .github/workflows/ci.yml). Secret scanning is still covered by the
+# that CI runs and records as repo-score evidence (see ops/ci/tool-adoption.sh). Secret scanning is still covered by the
 # dedicated gitleaks security lane in `just security` / ops/ci/security.sh.
 
 # --- Adopted: the ratchet audit lane proves all of these in CI ---

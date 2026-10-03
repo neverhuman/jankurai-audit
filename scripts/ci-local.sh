@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Local CI runner: dispatches to ops/ci/<lane>.sh so a green local run means a
-# green CI run. Every lane below mirrors a job in .github/workflows/ci.yml.
+# green CI run. Forge CI on our own hosts calls the same ops/ci/<lane>.sh scripts.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 

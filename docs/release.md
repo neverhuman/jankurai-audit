@@ -5,6 +5,12 @@ the Tuiwright version, and the UX npm package version must agree. The first post
 `v1.7.0`. The current release is `v1.7.2`. Publish its tag only after every
 component default branch, complete hub integration, and both release-platform checks pass.
 
+> GitHub is now a publishing mirror only, and this repository carries no GitHub
+> Actions workflows. The workflow-based process below is how v1.7.2 and earlier
+> were built and signed; their published assets still verify as described. Later
+> releases are built and signed on our servers; a separate change introduces
+> key-based signing.
+
 The release workflow independently checks the locked family, builds Linux x86-64
 and Apple Silicon macOS products, runs their version commands, signs every asset
 with Sigstore, generates GitHub attestations, verifies the complete inventory,
@@ -89,11 +95,10 @@ node scripts/pre-tag-qualify.mjs <downloaded-run-directory> <run-id>
 
 Older GitHub CLI versions lack the required source-digest flags and are refused.
 
-Releases are signed by the workflows of `neverhuman/jankurai-audit`. v1.7.1 and
+v1.7.2 was signed by the workflows of `neverhuman/jankurai-audit`. v1.7.1 and
 earlier were signed before the rename, as `neverhuman/jankurai`; the installer
-picks the matching identity per tag. The probe evidence, why no human signing
-step is needed, and the exact owner steps for cutting a release from the mirror
-are in [forge-authority.md](forge-authority.md#release-identity-after-the-rename).
+picks the matching identity per tag. See
+[forge-authority.md](forge-authority.md#release-identity-after-the-rename).
 
 Build jobs use read-only tokens and upload unsigned assets. A fresh signing job
 validates the complete unsigned inventory and signs it without building or
@@ -130,17 +135,19 @@ the bundle digest and `git bundle verify` result in the migration evidence.
 Rollback selects a prior verified release or restores accepted locks through a
 protected PR; never move an existing release tag.
 
-Monitoring uses required-check failures, uploaded audit findings, release job
-status, and the hourly token-expiration job. Maintainers investigate failed
+Monitoring uses forge required-check failures, audit findings and release job
+status on our hosts. Maintainers investigate failed
 checks before another publication attempt. Abuse controls include read-only
 build tokens, a hub-only publisher secret, bounded lock artifacts, exact-SHA
 checks, protected PR merges, immutable tags, and fixed installer asset inventory.
 
-The CI budget is bounded by workflow job timeouts and concurrency groups; the
-updater runs once per hour and GitHub API rate limits bound its request quota.
-Failure, token expiry, or exhausted quota is a stop condition. Disabling the
-`family-update` workflow is the maintainer kill switch while investigating
-unexpected workload. No workflow retries indefinitely or purchases extra quota.
+CI runs on the forge and our own hosts; GitHub is a publishing mirror and runs
+no workflows for this family. Releases are built and signed on our servers; a
+separate change introduces key-based signing. The CI budget is the capacity of
+those hosts; no GitHub-hosted minutes or API quota are spent. Failure or
+exhausted capacity is a stop condition. Pausing this repository's forge gate is
+the maintainer kill switch while investigating unexpected workload. Nothing
+retries indefinitely or purchases extra quota.
 
 
 ### Recover an interrupted family update

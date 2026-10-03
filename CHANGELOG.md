@@ -8,6 +8,13 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ### Changed
 
+- GitHub is a publishing mirror only. The GitHub Actions workflows (`ci.yml`,
+  `family-update.yml`, `release.yml`, `release-services.yml`) are removed, along
+  with the checks that only verified them (`scripts/release-workflow.test.mjs`,
+  `scripts/ci-aggregate.*`, `ops/ci/aggregate.sh`, `ops/ci/github-setup.sh`, the
+  actionlint/zizmor workflow lint). CI runs on the forge and our own hosts;
+  releases are built and signed on our servers, and key-based signing lands in a
+  separate change.
 - The published audit-demo catalog no longer carries producer home paths. The
   new `scripts/demo/redact-capture.mjs` rewrites a capture's absolute auditor,
   sample and output paths to `/jankurai-audit-demo` placeholders, recomputes

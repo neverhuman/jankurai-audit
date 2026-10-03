@@ -15,7 +15,6 @@ policy and structure. Application pentests, cloud IAM, Terraform or Kubernetes
 posture, and runtime authorization are outside it.
 
 [**Current release v1.7.2**](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.2)
-· [CI](https://github.com/neverhuman/jankurai-audit/actions/workflows/ci.yml)
 · [Install](docs/install.md)
 · [AGENTS.md](AGENTS.md)
 
@@ -23,6 +22,8 @@ The authority for this family is the hosted forge: `main` of each
 `root/jankurai*` on the forge is the source of truth and what gets
 deployed. The `neverhuman/jankurai-audit*` repositories on GitHub are mirrors of
 it, so pull requests go to the forge and `<repo>/required` there is the gate.
+GitHub is a publishing mirror only: CI runs on the forge and our own hosts, and
+releases are built and signed on our servers.
 See [docs/forge-authority.md](docs/forge-authority.md).
 
 Jankurai audits a repository for unsafe changes, missing proof, unclear ownership,

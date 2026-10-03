@@ -49,16 +49,15 @@ verify: check
 test:
     bash scripts/validate-family.sh
 
-# Security lane: secret scanning, supply-chain SBOM, and workflow linting.
+# Security lane: secret scanning, supply-chain SBOM, and family lock review.
 # gitleaks scans the tracked tree for committed secrets; syft generates a
-# CycloneDX SBOM from the family manifest/lock supply-chain surface; actionlint
-# lints the pinned GitHub Actions workflows; and the manifest scan verifies every
+# CycloneDX SBOM from the family manifest/lock supply-chain surface; and the
+# manifest scan verifies every
 # family lock pin resolves to an immutable tag and commit (this hub's
 # dependency-audit surface, since no Cargo.toml/package.json is shipped).
 security:
     gitleaks detect --source . --no-banner --redact
     syft scan dir:. -o cyclonedx-json=target/jankurai/security/sbom.json
-    actionlint .github/workflows/ci.yml
     bash scripts/validate-family.sh
 
 # Jankurai self-audit lane: writes the repo-score artifacts that CI uploads.

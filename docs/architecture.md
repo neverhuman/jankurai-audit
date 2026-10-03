@@ -23,7 +23,7 @@ hub (this repo)
 | `repos.manifest.toml` | Sole protected family inventory: forge authority and GitHub mirror routes, paths, slugs, branches, checks, and roles. |
 | `family.lock` | Pins each member repo to a release tag and commit SHA. |
 | `scripts/` | Family validation, deterministic root-manifest projection, local fusion, and CI routing. |
-| `ops/ci/` | Thin per-lane CI scripts shared by `just` and GitHub Actions. |
+| `ops/ci/` | Thin per-lane CI scripts shared by `just` and forge CI on our own hosts. |
 | `agent/` | Machine-readable owner/test/generated-zone maps and standard metadata. |
 | `docs/` | Architecture, boundaries, testing, release, and exception doctrine. |
 | `action.yml` | The published GitHub Action entrypoint. |

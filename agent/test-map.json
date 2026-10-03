@@ -63,7 +63,7 @@
     },
     ".github/": {
       "command": "bash scripts/validate-family.sh",
-      "purpose": "verify CI workflow entrypoints stay pinned and thin"
+      "purpose": "verify the agent instruction files stay valid"
     },
     "agent/": {
       "command": "bash scripts/validate-family.sh",

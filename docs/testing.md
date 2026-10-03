@@ -7,13 +7,12 @@ repair hints, and where the proof lanes live.
 ## Proof lanes
 
 The hub is validated by deterministic, hermetic lanes runnable from the repo
-root. The same commands run locally and in CI (see
-[`.github/workflows/ci.yml`](../.github/workflows/ci.yml), which delegates to
-`ops/ci/<lane>.sh`).
+root. The same `ops/ci/<lane>.sh` commands run locally and in forge CI on our
+own hosts; GitHub is a publishing mirror and runs no workflows.
 
 | Lane | Command | Proves |
 | --- | --- | --- |
-| `fast` | `bash scripts/validate-family.sh` | split metadata, lock pins, branch deps, cross-repo path deps, action pinning |
+| `fast` | `bash scripts/validate-family.sh` | split metadata, lock pins, branch deps, cross-repo path deps, `action.yml` pinning |
 | `security` | `gitleaks detect` + family-lock review | no committed secrets, no supply-chain drift |
 | `audit` | `jankurai audit . --json .jankurai/repo-score.json --md .jankurai/repo-score.md` | repo passes the jankurai standard |
 | `check` | `fast` + `security` + `audit` | the full local gate |
@@ -29,7 +28,7 @@ Failures are never opaque. Each lane emits a structured, agent-readable receipt
 so the next agent can repair locally without re-deriving context:
 
 - `scripts/validate-family.sh` prints `validate-family: <reason>` and exits
-  non-zero with the exact failing pin, manifest entry, or unpinned action.
+  non-zero with the exact failing pin, manifest entry, or unpinned `action.yml` step.
 - The audit lane writes both `.jankurai/repo-score.json` and
   `.jankurai/repo-score.md`. The JSON `findings[]` array carries, for every
   finding, a typed repair surface: `rule_id`, `path`, `problem`, `agent_fix`,

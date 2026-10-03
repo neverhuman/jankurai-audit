@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # CI doctor: confirms the local environment has every tool the ops/ci lanes
 # depend on, with the versions pinned in ops/ci/lib.sh. Run this before pushing
-# to verify your machine matches what GitHub Actions provides.
+# to verify your machine matches the CI hosts.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../ops/ci/lib.sh"
 

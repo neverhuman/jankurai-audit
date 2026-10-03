@@ -76,10 +76,9 @@ export class Family {
     return true;
   }
   // Where member checkouts and their pin tags come from. The forge is the
-  // authority and the default. GitHub-hosted runners cannot read the private
-  // forge, so ops/ci/github-setup.sh selects the public mirror. Every pin is
-  // checked against its locked commit either way: the source decides
-  // availability, never trust.
+  // authority and the default; JANKURAI_FAMILY_SOURCE=mirror selects the public
+  // mirror. Every pin is checked against its locked commit either way: the
+  // source decides availability, never trust.
   pinSource(repo) {
     const source = process.env.JANKURAI_FAMILY_SOURCE || 'hosted';
     if (source === 'hosted') return repo.hosted;
