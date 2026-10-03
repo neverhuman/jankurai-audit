@@ -1,0 +1,9 @@
+# CI provider declaration. The forge configures its checks forge-side,
+# so there is no committed workflow file to read; this names the lanes it
+# runs. Credit comes from the lane's real content, never from this file.
+schema_version = "2"
+provider = "jeryu"
+
+[[lane]]
+name = "required"
+command = "bash ops/ci/required.sh"
