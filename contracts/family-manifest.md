@@ -21,8 +21,8 @@ Mirror names come from `mirror_repo_prefix`: the hub mirrors as
 pins a name. The old `neverhumanbot/jankurai-*` repositories cannot be
 transferred, which is why the mirror carries the hub's prefix.
 
-`legacy_jeryu` is retired (127.0.0.1:2224 no longer exists) and declaring it is
-an error.
+`legacy_jeryu` is retired (the remote it named no longer exists) and declaring it
+is an error.
 
 `[[mirror_only_repo]]` declares repositories the forge mirrors that are not
 family members: `jankurai-action` carries no split-member metadata, no

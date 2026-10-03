@@ -117,7 +117,7 @@ test('manifest rejects members that route away from the forge or stop mirroring'
   repo.mirror_github_main = false;
   assert.throws(() => family.validate(), /must mirror main to GitHub/);
   repo.mirror_github_main = true;
-  repo.legacy_jeryu = 'ssh://git@127.0.0.1:2224/root/jankurai-core.git';
+  repo.legacy_jeryu = 'ssh://git@forge.example:2224/root/jankurai-core.git';
   assert.throws(() => family.validate(), /legacy_jeryu is retired/);
 });
 test('mirror-only repositories are validated but never family members', t => {
