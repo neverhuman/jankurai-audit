@@ -8023,12 +8023,12 @@
       "preservedName": "producer-audit-state.json",
       "contract": "jankurai smart-state1.0.0",
       "executableSha256": "239756d402a580e9ce396708eee2d8e76360706ca87138346495a842e5b8853e",
-      "reportSha256": "239c0e26c777b6f5fa56783111c58cd9b373c3b92d4e9fc2ba81b5d4dd2df78f",
+      "reportSha256": "8918a22667ec01bdcf38210767d1cc8ea3af362e7aec23d127918e04148485a4",
       "startedEpochMs": 1788954103270,
       "completedEpochMs": 1788954106662
     }
   ],
-  "recordingSha256": "c6fccefe81f6e9167af773e1dcbdc2ac352dfe4f9fdbd12c3db339781afaf258",
+  "recordingSha256": "615ccdaa106c9c71e301bd56a39f132d38cb628228ed3aedb9cbace52bc38fe3",
   "expectedSampleOutcome": "FAIL",
   "measuredOutcome": {
     "summary": {

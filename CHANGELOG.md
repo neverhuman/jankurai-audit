@@ -8,6 +8,15 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ### Changed
 
+- The published audit-demo catalog no longer carries producer home paths. The
+  new `scripts/demo/redact-capture.mjs` rewrites a capture's absolute auditor,
+  sample and output paths to `/jankurai-audit-demo` placeholders, recomputes
+  every digest that binds the capture, and refuses an absolute path it does not
+  cover; `generate-demo.mjs` runs it before rendering, and the committed catalog
+  was redacted with it (GIF pixels are unchanged — rendering only ever displayed
+  `basename(repository)`).
+- `ops/ci/artifact_support.sh` finds a local Jeryu checkout through
+  `JERYU_SOURCE_DIR` instead of a hardcoded home path.
 - The hosted forge is the family authority and GitHub is a mirror.
   `repos.manifest.toml` is schema `3.0.0`: `authority_forge = "jeryu"`, forge
   `hosted`/`slug`/`jeryu_slug` routes, GitHub `github`/`github_slug` mirror

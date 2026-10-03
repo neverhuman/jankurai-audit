@@ -36,6 +36,13 @@ node scripts/demo/publish-demo.mjs "$PWD/target/audit-demo/rendered" "$PWD/docs/
 npm run demo:verify
 ```
 
+Generation records wherever the producer ran, so it rewrites the capture's
+absolute auditor, sample and output paths to `/jankurai-audit-demo` placeholders
+before rendering (`scripts/demo/redact-capture.mjs`, also runnable on a published
+catalog). Rendering displays only `basename(repository)`, so no pixel changes;
+every digest that binds the capture is recomputed, and an absolute path the
+redaction map does not cover fails generation instead of being published.
+
 Generation requires an explicit absolute auditor path and a new output directory.
 It creates an intentionally incomplete sample, captures the process and fresh
 report, renders both GIFs, and independently decodes their pixels. There is no

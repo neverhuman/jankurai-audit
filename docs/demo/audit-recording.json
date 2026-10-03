@@ -3,22 +3,22 @@
   "kind": "recorded-process",
   "identity": {
     "executableSha256": "239756d402a580e9ce396708eee2d8e76360706ca87138346495a842e5b8853e",
-    "executable": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/verified-auditor/jankurai",
-    "repository": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository",
+    "executable": "/jankurai-audit-demo/jankurai",
+    "repository": "/jankurai-audit-demo/sample-repository",
     "commit": null,
     "tree": null,
     "statusBefore": null,
     "argv": [
       "audit",
-      "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository",
+      "/jankurai-audit-demo/sample-repository",
       "--full",
       "--mode",
       "standard",
       "--no-score-history",
       "--json",
-      "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/recording/report.json",
+      "/jankurai-audit-demo/recording/report.json",
       "--md",
-      "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/recording/report.md"
+      "/jankurai-audit-demo/recording/report.md"
     ],
     "statusAfter": null
   },
@@ -104,7 +104,7 @@
         "HLT-017-OPAQUE-OBSERVABILITY on crates/domain",
         "HLT-025-RELEASE-READINESS-GAP on docs/release.md"
       ],
-      "repo": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository",
+      "repo": "/jankurai-audit-demo/sample-repository",
       "run_id": "1788954106",
       "started_at": "1788954106",
       "elapsed_ms": 3352,
@@ -141,7 +141,7 @@
         "dirty_worktree": false
       },
       "policy": {
-        "path": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository/agent/audit-policy.toml",
+        "path": "/jankurai-audit-demo/sample-repository/agent/audit-policy.toml",
         "minimum_score": 85,
         "fail_on": [
           "critical",
@@ -988,7 +988,7 @@
         "schema_version": "1.1.0",
         "generated_by": "jankurai copy-code",
         "generated_at": "2026-09-09T11:41:43.729133606+00:00",
-        "repo": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository",
+        "repo": "/jankurai-audit-demo/sample-repository",
         "auditor_version": "1.7.0",
         "status": "pass",
         "policy": {
@@ -1927,7 +1927,7 @@
         }
       ]
     },
-    "reportSha256": "239c0e26c777b6f5fa56783111c58cd9b373c3b92d4e9fc2ba81b5d4dd2df78f"
+    "reportSha256": "8918a22667ec01bdcf38210767d1cc8ea3af362e7aec23d127918e04148485a4"
   },
   "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stderrSha256": "892666586a68f2af4e56ba094d322246dc7f60d9b5ba01327bf61d45b43cddda"

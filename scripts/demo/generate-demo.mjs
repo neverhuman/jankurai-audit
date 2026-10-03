@@ -8,6 +8,7 @@ import { sha256, validateRecording, outcome } from './audit-recording.mjs';
 import { render } from './render-audit-gif.mjs';
 import { cleanupSample } from './sample-cleanup.mjs';
 import { captureProducerState } from './producer-state.mjs';
+import { redactCapture } from './redact-capture.mjs';
 
 const [auditor, destination] = process.argv.slice(2);
 if (!auditor || !path.isAbsolute(auditor) || !destination) throw new Error('usage: generate-demo.mjs /absolute/qualified-auditor /new-output-directory');
@@ -42,17 +43,20 @@ try {
       || result.passed || recording.result.exitCode !== 1) {
     throw new Error('sample audit did not complete with a consistent real policy outcome');
   }
-  producerOutputs.push(captureProducerState(sample, recording, capture));
+  // The capture names producer-local absolute paths; publish placeholders.
+  const redactedBytes = redactCapture(capture);
+  const redacted = validateRecording(JSON.parse(redactedBytes));
+  producerOutputs.push(captureProducerState(sample, redacted, capture));
   // This job verifies an honest demo; an explicitly displayed sample policy FAIL
   // is allowed. Missing execution/report and contradictory outcomes remain fatal.
   const rendered = path.join(root, 'rendered');
-  render(recordingBytes, rendered);
+  render(redactedBytes, rendered);
   const verify = spawnSync(process.execPath, [path.join(here, 'verify-audit-gif.mjs'), rendered, '--pixels-only'], { stdio: 'inherit' });
   if (verify.status !== 0) throw new Error('independent decoded pixel verification failed');
   fs.writeFileSync(path.join(capture, 'sample-inputs.json'), JSON.stringify({
     description: 'Real audit of an authored sample repository; policy failures are preserved.',
     inventory, sourceSha256: sha256(JSON.stringify(inventory)), producerOutputs,
-    recordingSha256: sha256(recordingBytes), expectedSampleOutcome: 'FAIL', measuredOutcome: result,
+    recordingSha256: sha256(redactedBytes), expectedSampleOutcome: 'FAIL', measuredOutcome: result,
   }, null, 2) + '\n', { flag: 'wx' });
 } catch (error) {
   fatal = error;

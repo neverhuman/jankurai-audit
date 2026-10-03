@@ -26,7 +26,7 @@
     "HLT-017-OPAQUE-OBSERVABILITY on crates/domain",
     "HLT-025-RELEASE-READINESS-GAP on docs/release.md"
   ],
-  "repo": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository",
+  "repo": "/jankurai-audit-demo/sample-repository",
   "run_id": "1788954106",
   "started_at": "1788954106",
   "elapsed_ms": 3352,
@@ -63,7 +63,7 @@
     "dirty_worktree": false
   },
   "policy": {
-    "path": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository/agent/audit-policy.toml",
+    "path": "/jankurai-audit-demo/sample-repository/agent/audit-policy.toml",
     "minimum_score": 85,
     "fail_on": [
       "critical",
@@ -910,7 +910,7 @@
     "schema_version": "1.1.0",
     "generated_by": "jankurai copy-code",
     "generated_at": "2026-09-09T11:41:43.729133606+00:00",
-    "repo": "/home/ubuntu/jankurai-split/target/release-1.7.0/audit-demo-20260909/optimized-demo-qualification/sample-repository",
+    "repo": "/jankurai-audit-demo/sample-repository",
     "auditor_version": "1.7.0",
     "status": "pass",
     "policy": {

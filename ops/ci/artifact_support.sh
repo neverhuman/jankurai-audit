@@ -154,6 +154,8 @@ bundle_evidence() {
     -C "$out_dir" context.json manifest.json logs receipts
 }
 
+# Resolve the signrail CLI: explicit binary, then PATH, then a local Jeryu
+# checkout named by JERYU_SOURCE_DIR, then a pinned install from the mirror.
 run_signrail() {
   if [[ -n "${JERYU_SIGNRAIL_BIN:-}" ]]; then
     "$JERYU_SIGNRAIL_BIN" "$@"
@@ -161,8 +163,8 @@ run_signrail() {
     jeryu-signrail "$@"
   elif command -v jeryu_signrail >/dev/null 2>&1; then
     jeryu_signrail "$@"
-  elif [[ -f /home/ubuntu/jeryu/crates/jeryu-signrail/Cargo.toml ]]; then
-    cargo run -q --manifest-path /home/ubuntu/jeryu/crates/jeryu-signrail/Cargo.toml -- "$@"
+  elif [[ -n "${JERYU_SOURCE_DIR:-}" && -f "${JERYU_SOURCE_DIR}/crates/jeryu-signrail/Cargo.toml" ]]; then
+    cargo run -q --manifest-path "${JERYU_SOURCE_DIR}/crates/jeryu-signrail/Cargo.toml" -- "$@"
   else
     cargo install --locked --git https://github.com/neverhuman/jeryu jeryu-signrail
     jeryu-signrail "$@"
