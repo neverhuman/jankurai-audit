@@ -11,6 +11,9 @@ This cell owns the hub's CI and operational surface. Read the root
   mirror and runs no workflows for this repository.
 - `ops/ci/lib.sh` — shared tool-version pins and artifact assertions; the single
   source of truth so local runs and CI execute the same commands.
+- `ops/release/` — owner-run release tooling: build on our hosts, sign with the
+  release key, verify, publish to the GitHub mirror (see `docs/release.md`).
+  `release-keys/` holds the public keys the installer pins.
 - `ops/git-hooks/pre-push` — the mandatory pre-push gate; wire it with
   `git config core.hooksPath ops/git-hooks`.
 
@@ -20,6 +23,8 @@ This cell owns the hub's CI and operational surface. Read the root
   forge and our own hosts so CI and local stay identical.
 - Do not unpin a third-party action in the shipped `action.yml`. Every `uses:`
   is pinned to a 40-character commit SHA.
+- Never commit, print, copy into CI, or hand to an agent the release signing
+  private key or its password; never generate the production key for the owner.
 - Do not hand-edit generated zones listed in
   [`agent/generated-zones.toml`](../agent/generated-zones.toml).
 

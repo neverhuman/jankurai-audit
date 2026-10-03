@@ -1,0 +1,5 @@
+PLACEHOLDER: the jankurai 2026 release public key has not been generated yet.
+The owner runs ops/release/generate-signing-key.sh on the signing host, then
+ops/release/install-public-key.sh, which replaces this file with the PEM public
+key and pins its SHA-256 in jankurai-installer.sh. Until then the installer pin
+is all zeros and every key-signed tag is refused.

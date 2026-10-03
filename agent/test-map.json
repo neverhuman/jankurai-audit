@@ -53,6 +53,10 @@
       "command": "bash scripts/validate-family.sh",
       "purpose": "verify the release installer stays present and coherent"
     },
+    "release-keys/": {
+      "command": "bash ops/ci/fast.sh",
+      "purpose": "verify the committed release public key matches the installer's pinned SHA-256 and signs end to end"
+    },
     "Justfile": {
       "command": "bash scripts/validate-family.sh",
       "purpose": "verify the root command surface lanes are runnable"

@@ -62,53 +62,55 @@ build and the lock. Promoting it to a member means adding that metadata and a
 ## GitHub is a publishing mirror
 
 GitHub is only a publishing destination for this family. The mirrors carry no
-GitHub Actions workflows: builds, CI and scoring run on the forge and our own
-hosts, and `<repo>/required` on the forge is the gate. Releases are built and
-signed on our servers; a separate change introduces key-based release signing.
+GitHub Actions workflows. Builds, CI and scoring run on the forge and our own
+hosts, and `<repo>/required` on the forge is the gate. Releases are built on our
+build hosts, signed with a release key we hold, and uploaded to the hub mirror's
+GitHub Releases by the owner. [release.md](release.md) has the owner steps, and
+`ops/release/` holds the tooling.
 
-The scripts behind the retired GitHub release path (`ops/ci/release-services.sh`,
-`ops/ci/sign-release.sh`, `ops/ci/record-attestations.sh`,
-`scripts/pre-tag-qualify.mjs`, `scripts/publish-ci-tag.mjs`,
-`ops/ci/publish-release.mjs`, the `family-update` publishers) are still in the
-tree and keep their unit tests, but nothing invokes them. They depend on
-GitHub OIDC and are replaced by the new signing model.
+The scripts that served only the GitHub workflow release path are deleted:
+
+- keyless signing for new releases: `ops/ci/sign-release.sh`, `ops/ci/release-sign-blob.sh`
+- attestation export: `ops/ci/record-attestations.sh`, `ops/ci/verify-release-signatures.sh`
+- the signing-service probe and its pre-tag qualifier: `ops/ci/release-services.sh`,
+  `scripts/pre-tag-qualify.mjs` and its fixture, `ops/ci/install-gh.sh`
+- Actions-driven CI tags: `scripts/publish-ci-tag.mjs`
+- the workflow publish, promote and smoke jobs: `ops/ci/release-publish.sh`,
+  `ops/ci/release-smoke.sh`, `ops/ci/release-build.sh`, `ops/ci/release-macos-sign.sh`
+
+Packaging, inventory checks, staged verification and publication moved to
+`ops/release/` in key-signed form. What stays is what verifying v1.7.1 and
+earlier still needs: the installer's keyless path, with its pinned GitHub CLI,
+cosign and jq. The `family-update` publishers are a separate path and are
+unchanged here.
 
 ## Release identity after the rename
 
 The hub was renamed from `neverhuman/jankurai` to `neverhuman/jankurai-audit`
 after v1.7.1 (the repository id is unchanged and the old name redirects).
-Sigstore certificates record the name a workflow ran under and never change, so:
+Sigstore certificates record the name a workflow ran under and never change, so
+v1.7.1 and earlier are signed as
+`https://github.com/neverhuman/jankurai/.github/workflows/release.yml@refs/tags/<tag>`,
+with source repository `https://github.com/neverhuman/jankurai`. Verified for
+v1.7.1: `gh attestation verify --repo neverhuman/jankurai` passes and
+`--repo neverhuman/jankurai-audit` fails with `expected SourceRepositoryURI`.
+`jankurai-installer.sh` verifies those tags as `neverhuman/jankurai` whichever hub
+name is requested. Any other `--repo` verifies as itself.
 
-- v1.7.1 and earlier are signed as
-  `https://github.com/neverhuman/jankurai/.github/workflows/release.yml@refs/tags/<tag>`,
-  with source repository `https://github.com/neverhuman/jankurai`. Verified for
-  v1.7.1: `gh attestation verify --repo neverhuman/jankurai` passes and
-  `--repo neverhuman/jankurai-audit` fails with `expected SourceRepositoryURI`.
-- v1.7.2, the last release signed by a GitHub workflow, is signed as
-  `https://github.com/neverhuman/jankurai-audit/.github/workflows/release.yml@refs/tags/<tag>`.
+### Key-signed releases from v1.7.2
 
-The release guards name only the new repository: `ops/ci/release-services.sh`,
-`scripts/pre-tag-qualify.mjs`, `ops/ci/publish-release.mjs`,
-`ops/ci/package-release.mjs` (the provenance `repository`),
-`scripts/publish-ci-tag.mjs` and `ops/ci/public-install-smoke.sh`. Two places
-also accept the old name, explicitly:
+No GitHub workflow ever signed v1.7.2, and none will: no keyless evidence exists
+for it. v1.7.2 is the first release built on our servers and signed with the
+release key (`release-keys/jankurai-release-2026.pub`, pinned by SHA-256 in the
+installer's `release_keys` table). Every later tag follows it. For these tags the
+installer requires `<asset>.sha256` and `<asset>.cosign.bundle`, verified against
+the pinned key, plus provenance schema `jankurai.release/v2` naming
+`https://github.com/neverhuman/jankurai-audit`, the tag, commit and tree. It
+needs no GitHub attestation and fetches no GitHub CLI. The tag `v1.7.2` itself is
+unchanged. Only its release assets are new.
 
-- `jankurai-installer.sh` defaults to `neverhuman/jankurai-audit`. For either
-  hub name it verifies tags up to v1.7.1 as `neverhuman/jankurai` and later tags
-  as `neverhuman/jankurai-audit`; any other `--repo` verifies as itself.
-- `ops/ci/verify-badge-source.mjs` accepts a retained badge record under either
-  name, provided its run and job links name the same repository.
-
-### Releases after v1.7.2
-
-v1.7.2 was the last release signed by GitHub's keyless OIDC flow; its tag and
-assets stay as published and the installer keeps verifying them under the
-identities above. Later releases are built and signed on our servers with a
-key we hold, introduced in a separate change.
-
-`scripts/fixtures/pretag-gh-2.100.0.json` is retained verifier output from a
-pre-rename probe. Its test parses it under the old identity and checks that
-the current identity rejects it. It is a parser regression, not evidence.
+`ops/ci/verify-badge-source.mjs` still accepts a retained badge record under
+either hub name, provided its run and job links name the same repository.
 
 The `v1.7.1` and earlier assets, their installer copies and
 `raw.githubusercontent.com/.../v1.7.1` lines keep working through GitHub's

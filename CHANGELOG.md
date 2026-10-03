@@ -8,13 +8,40 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ### Changed
 
+- Releases are built on our own build hosts and signed with a release key we
+  hold. v1.7.2 is the first key-signed release; no GitHub keyless evidence will
+  exist for it. New owner-run tooling lives in `ops/release/`:
+  `build-release.sh` builds the tag's `family.lock` composition reproducibly and
+  records the toolchain, lock digests, commit, tree and build root in provenance
+  schema `jankurai.release/v2`; `build-darwin-remote.sh` optionally adds Apple
+  Silicon assets from a macOS build host; `sign-release.sh` signs every asset
+  with `cosign sign-blob --key` into `<asset>.cosign.bundle`, offline, without
+  Rekor unless the owner opts in, and fails closed on an exposed, linked or
+  misplaced key; `verify-release.sh` and `verify-staged-release.sh` verify
+  offline and through the installer; `publish-github-release.sh` creates the
+  GitHub release for an existing tag (with `--dry-run`); and
+  `generate-signing-key.sh` and `install-public-key.sh` create the key pair and
+  commit its public half.
+- `jankurai-installer.sh` verifies v1.7.2 and later with the `.sha256` and a key
+  signature against `release-keys/jankurai-release-2026.pub`, whose SHA-256 is
+  pinned in a rotatable `release_keys` table (an all-zero placeholder until the
+  owner provisions the key). It no longer needs GitHub CLI or attestations for
+  those tags. v1.7.1 and earlier keep the keyless workflow path unchanged. Install
+  v1.7.2 with the installer from the release assets or `main`: the copy in the
+  v1.7.2 tag predates key signing.
+- Deleted the GitHub-only release scripts (`ops/ci/sign-release.sh`,
+  `release-sign-blob.sh`, `verify-release-signatures.sh`,
+  `record-attestations.sh`, `release-services.sh`, `release-publish.sh`,
+  `release-smoke.sh`, `release-build.sh`, `release-macos-sign.sh`,
+  `install-gh.sh`, `scripts/pre-tag-qualify.mjs`, `scripts/publish-ci-tag.mjs`)
+  and their tests. Packaging, inventory checks, staged verification and
+  publication moved to `ops/release/`.
 - GitHub is a publishing mirror only. The GitHub Actions workflows (`ci.yml`,
   `family-update.yml`, `release.yml`, `release-services.yml`) are removed, along
   with the checks that only verified them (`scripts/release-workflow.test.mjs`,
   `scripts/ci-aggregate.*`, `ops/ci/aggregate.sh`, `ops/ci/github-setup.sh`, the
   actionlint/zizmor workflow lint). CI runs on the forge and our own hosts;
-  releases are built and signed on our servers, and key-based signing lands in a
-  separate change.
+  releases are built and signed on our servers.
 - The published audit-demo catalog no longer carries producer home paths. The
   new `scripts/demo/redact-capture.mjs` rewrites a capture's absolute auditor,
   sample and output paths to `/jankurai-audit-demo` placeholders, recomputes

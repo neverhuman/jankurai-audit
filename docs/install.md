@@ -2,10 +2,11 @@
 
 The current published release is
 [v1.7.2](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.2).
-It provides native Linux x86-64 and Apple Silicon macOS binaries.
+It provides native Linux x86-64 binaries, and Apple Silicon macOS binaries when
+the release lists them (they are built on a separate macOS build host).
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai-audit/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
 ```
@@ -56,7 +57,7 @@ authorization.
 ## Tuiwright
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai-audit/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2 --product tuiwright'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2 --product tuiwright'
 tuiwright --version
 ```
 
@@ -67,48 +68,43 @@ Expected: `tuiwright 1.7.2`. Remove it with
 
 The built `jankurai-ux-qa-1.7.2.tgz` is attached to the release. Browser auditing
 requires Node.js 24, npm, Playwright 1.59.1, and Chromium. This optional package's
-manual verification uses [GitHub CLI 2.100.0](https://github.com/cli/cli/releases/tag/v2.100.0),
-[cosign 3.1.3](https://github.com/sigstore/cosign/releases/tag/v3.1.3), and
-[jq 1.8.2](https://github.com/jqlang/jq/releases/tag/jq-1.8.2). Install those tools
+manual verification uses [cosign 3.1.3](https://github.com/sigstore/cosign/releases/tag/v3.1.3)
+and [jq 1.8.2](https://github.com/jqlang/jq/releases/tag/jq-1.8.2). Install them
 using their verified upstream distribution before continuing; no GitHub login is
 needed. Auditor and TUI installation above bootstrap their own temporary verifiers.
 
-Run this in Bash, in a new directory for the downloaded package. The Linux
-provenance describes the workflow that built the platform-independent npm asset:
+Run this in Bash, in a new directory for the downloaded package. The release
+public key must match the SHA-256 pinned in `jankurai-installer.sh`'s
+`release_keys` table; the Linux provenance describes the build that produced the
+platform-independent npm asset:
 
 ```bash
 set -euo pipefail
-repo=neverhuman/jankurai-audit
-tag=v1.7.2
+base=https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.2
 package=jankurai-ux-qa-1.7.2.tgz
 provenance=provenance-x86_64-unknown-linux-gnu.json
-identity="https://github.com/$repo/.github/workflows/release.yml@refs/tags/$tag"
+key=jankurai-release-2026.pub
+curl --proto '=https' --tlsv1.2 -fsSL "$base/jankurai-installer.sh" -o installer.sh
+curl --proto '=https' --tlsv1.2 -fsSL "$base/$key" -o "$key"
+pin="$(sed -n "s/^$key|\([0-9a-f]\{64\}\)|.*/\1/p" installer.sh)"
+sha() { if command -v shasum >/dev/null; then shasum -a 256 "$1"; else sha256sum "$1"; fi | cut -d ' ' -f 1; }
+[[ "$(sha "$key")" == "$pin" ]]
 for file in "$package" "$provenance"; do
-  for suffix in '' .sha256 .sigstore.bundle .attestation.jsonl; do
-    curl --proto '=https' --tlsv1.2 -fsSL \
-      "https://github.com/$repo/releases/download/$tag/$file$suffix" -o "$file$suffix"
+  for suffix in '' .sha256 .cosign.bundle; do
+    curl --proto '=https' --tlsv1.2 -fsSL "$base/$file$suffix" -o "$file$suffix"
   done
-  if command -v shasum >/dev/null; then shasum -a 256 -c "$file.sha256"
-  else sha256sum -c "$file.sha256"; fi
-  cosign verify-blob "$file" --bundle "$file.sigstore.bundle" \
-    --certificate-identity "$identity" \
-    --certificate-oidc-issuer https://token.actions.githubusercontent.com
+  [[ "$(cat "$file.sha256")" == "$(sha "$file")  $file" ]]
+  cosign verify-blob "$file" --bundle "$file.cosign.bundle" --key "$key" \
+    --insecure-ignore-tlog=true --offline=true
 done
-commit="$(jq -er '.commit | select(test("^[0-9a-f]{40}$"))' "$provenance")"
-for file in "$package" "$provenance"; do
-  env -u GH_TOKEN -u GITHUB_TOKEN -u GH_ENTERPRISE_TOKEN -u GITHUB_ENTERPRISE_TOKEN \
-    gh attestation verify "$file" --bundle "$file.attestation.jsonl" --repo "$repo" \
-    --cert-identity "$identity" --cert-oidc-issuer https://token.actions.githubusercontent.com \
-    --deny-self-hosted-runners \
-    --signer-digest "$commit" --source-digest "$commit" --source-ref "refs/tags/$tag"
-done
+jq -e '.schema == "jankurai.release/v2" and .tag == "v1.7.2"' "$provenance"
 ```
 
-The hub repository was renamed from `neverhuman/jankurai` to
-`neverhuman/jankurai-audit` after v1.7.1. Signatures keep the name they were made
-under, so to verify v1.7.1 or earlier by hand set `repo=neverhuman/jankurai`
-(downloads from the old name redirect). The installer chooses the right identity
-by itself.
+Compare the pin with the installer in the hub repository on `main` as well as the
+downloaded copy. Releases up to v1.7.1 were signed keylessly by the GitHub
+workflow of `neverhuman/jankurai` and verify with `.sigstore.bundle` and
+`.attestation.jsonl` against that workflow identity, as their own release
+documentation describes; the installer handles both by itself.
 
 Only after every verification command succeeds:
 
@@ -124,12 +120,14 @@ Expected: `jankurai-ux-qa 1.7.2`. Remove it with
 
 ## Verification and source builds
 
-The installer pins GitHub CLI 2.100.0, cosign 3.1.3, and jq 1.8.2 by version and
-SHA-256 for each platform. It verifies the asset checksum, Sigstore identity,
-archive inventory and file types, repository and lock provenance, and the local
-GitHub attestation bundle. Attestation policy binds the source commit, tag,
-release workflow, and GitHub-hosted runner. `--verify-only` also executes the
-verified staged binary. Maintainers use `--assets-dir dist` to test signed staged
+The installer pins cosign 3.1.3 and jq 1.8.2 (and, for keyless releases, GitHub
+CLI 2.100.0) by version and SHA-256 for each platform. For v1.7.2 and later it
+verifies the downloaded release public key against its pinned SHA-256, the asset
+checksum, the key signature, archive inventory and file types, and the tag,
+commit, tree and lock provenance. For v1.7.1 and earlier it verifies the checksum,
+the Sigstore workflow identity, and the GitHub attestation bundle bound to the
+source commit, tag, release workflow and GitHub-hosted runner. `--verify-only`
+also executes the verified staged binary. Maintainers use `--assets-dir dist` to test signed staged
 assets before publication; the same verification policy applies.
 
 Contributor builds and family commands are documented in the

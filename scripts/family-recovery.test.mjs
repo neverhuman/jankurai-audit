@@ -6,7 +6,6 @@ import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { update } from './family-update.mjs';
 import { operationRoot, inspect, operation } from './family-operation.mjs';
-import { SUCCESS_MARKER, qualifyPreTag } from './pre-tag-qualify.mjs';
 
 function git(directory, ...args) {
   const r = spawnSync('/usr/bin/git', ['-C', directory, ...args], {
@@ -173,13 +172,4 @@ test('recover inspect works with malformed family.lock', t => {
   assert.equal(report.finishAdmissible, false);
   assert.ok(['unknown', 'original', 'unknown-same-bytes', 'unreadable'].includes(report.locks['family.lock'].class)
     || report.locks['family.lock'].class === 'unknown');
-});
-
-test('authored pre-tag text and empty bundles cannot establish expected source or execution', t => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pre-tag-'));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  fs.writeFileSync(path.join(root, 'result.txt'), SUCCESS_MARKER);
-  fs.writeFileSync(path.join(root, 'probe.txt.sigstore.bundle'), '{}');
-  fs.writeFileSync(path.join(root, 'probe.txt.attestation.jsonl'), '{}');
-  assert.throws(() => qualifyPreTag(root), /expected source SHA and run ID/);
 });

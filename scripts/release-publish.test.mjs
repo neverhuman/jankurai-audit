@@ -3,196 +3,120 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { publishRelease, promoteRelease, PROMOTION_JOBS } from '../ops/ci/publish-release.mjs';
+import { publish, readToken, releaseCommit, githubClient } from '../ops/release/publish-github-release.mjs';
 
+const hub = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const commit = 'a'.repeat(40);
 function fixture(t) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'release-publish-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
-  for (const file of ['binary.tar.gz', 'binary.tar.gz.sha256']) fs.writeFileSync(path.join(directory, file), file);
-  const options = { directory, repository: 'neverhuman/jankurai-audit', tag: 'v1.7.0', version: '1.7.0', commit: 'a'.repeat(40), notes: 'Reviewed release notes' };
-  const env = { GITHUB_EVENT_NAME: 'push', GITHUB_REF: `refs/tags/${options.tag}`, GITHUB_SHA: options.commit,
-    GITHUB_REPOSITORY: options.repository, GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '2', GITHUB_JOB: 'promote' };
-  const state = { release: null, assets: [], mutations: [], uploads: [], failUpload: false, tag: options.commit,
-    nextAssetId: 100, run: { head_sha: options.commit, event: 'push', path: '.github/workflows/release.yml', run_attempt: 2, status: 'in_progress' },
-    jobs: [...PROMOTION_JOBS, 'promote'].map((name, index) => ({ name, id: 1000 + index, run_id: 123, run_attempt: 2, head_sha: options.commit,
-      status: name === 'promote' ? 'in_progress' : 'completed', conclusion: name === 'promote' ? null : 'success' })) };
+  for (const file of ['binary.tar.gz', 'binary.tar.gz.sha256', 'binary.tar.gz.cosign.bundle']) fs.writeFileSync(path.join(directory, file), file);
+  const options = { directory, tag: 'v1.7.2', commit, notes: 'Reviewed release notes' };
+  const state = { release: null, assets: [], mutations: [], uploads: [], logs: [], failUpload: false, tag: commit, nextAssetId: 100, missingTag: false };
   const asset = file => ({ id: state.nextAssetId++, name: path.basename(file), state: 'uploaded', size: fs.statSync(file).size,
     digest: 'sha256:' + createHash('sha256').update(fs.readFileSync(file)).digest('hex') });
-  const api = (endpoint, body, method) => {
-    if (method) state.mutations.push({ endpoint, body, method });
-    if (endpoint.endsWith('/actions/runs/123')) return structuredClone(state.run);
-    if (endpoint.includes('/jobs?filter=all&')) return { jobs: structuredClone(state.jobs) };
-    if (endpoint.includes('/git/ref/tags/')) return { object: { type: 'commit', sha: state.tag } };
+  const api = async (method, endpoint, body, allowMissing) => {
+    if (method !== 'GET') state.mutations.push({ method, endpoint, body });
+    if (endpoint.includes('/git/ref/tags/')) return state.missingTag && allowMissing ? null : { object: { type: 'commit', sha: state.tag } };
     if (endpoint.includes('/releases/tags/')) return state.release;
     if (endpoint.endsWith('/releases') && method === 'POST') return state.release = { id: 7, tag_name: body.tag_name, draft: body.draft, prerelease: body.prerelease };
     if (endpoint.includes('/assets?')) return structuredClone(state.assets);
-    if (endpoint.endsWith('/releases/7') && method === 'PATCH') return state.release = { ...state.release, ...body, immutable: true };
-    if (endpoint.endsWith('/releases/7') || endpoint.endsWith('/releases/latest')) return structuredClone(state.release);
+    if (endpoint.endsWith('/releases/7') && method === 'PATCH') return state.release = { ...state.release, ...body, html_url: 'https://example.invalid/r/7' };
+    if (endpoint.endsWith('/releases/7')) return structuredClone(state.release);
     throw new Error('unexpected API call: ' + endpoint);
   };
-  const upload = (_repository, _tag, file) => {
+  const upload = async (_release, name, file) => {
     if (state.failUpload) throw new Error('interrupted upload');
-    state.uploads.push(path.basename(file)); state.assets.push(asset(file));
+    state.uploads.push(name); state.assets.push(asset(file));
   };
-  return { options, env, state, asset, api, run: () => publishRelease(options, api, upload), promote: () => promoteRelease(options, env, api) };
+  const run = (extra = {}) => publish({ ...options, ...extra }, api, upload, line => state.logs.push(line));
+  return { options, state, asset, run };
 }
-test('publication uploads a complete draft and exposes only an immutable prerelease', t => {
-  const f = fixture(t), release = f.run();
-  assert.equal(release.immutable, true); assert.equal(release.draft, false); assert.equal(release.prerelease, true);
-  assert.equal(f.state.uploads.length, 2);
-  assert.deepEqual(f.state.mutations.map(x => x.method), ['POST', 'PATCH']);
-  assert.deepEqual(f.state.mutations.at(-1).body, { draft: false, prerelease: true, make_latest: 'false' });
-  assert.ok(f.state.mutations.every(x => x.body.make_latest === 'false'));
+test('publication creates a draft, uploads every asset, then publishes it as latest', async t => {
+  const f = fixture(t); const release = await f.run();
+  assert.equal(release.draft, false);
+  assert.deepEqual(f.state.uploads.sort(), ['binary.tar.gz', 'binary.tar.gz.cosign.bundle', 'binary.tar.gz.sha256']);
+  assert.deepEqual(f.state.mutations.map(m => m.method), ['POST', 'PATCH']);
+  assert.equal(f.state.mutations[0].body.draft, true);
+  assert.equal(f.state.mutations[0].body.target_commitish, commit);
+  assert.deepEqual(f.state.mutations[1].body, { draft: false, prerelease: false, make_latest: 'true' });
 });
-test('retry preserves a matching partial draft and uploads only missing assets', t => {
-  const f = fixture(t); f.state.release = { id: 7, tag_name: 'v1.7.0', draft: true, prerelease: true };
-  f.state.assets.push(f.asset(path.join(f.options.directory, 'binary.tar.gz')));
-  f.state.failUpload = true; assert.throws(f.run, /interrupted upload/);
-  assert.equal(f.state.release.draft, true); assert.equal(f.state.assets.length, 1);
-  f.state.failUpload = false; f.run();
-  assert.deepEqual(f.state.uploads, ['binary.tar.gz.sha256']);
+test('--no-latest publishes without taking the latest flag', async t => {
+  const f = fixture(t); await f.run({ latest: false });
+  assert.equal(f.state.mutations.at(-1).body.make_latest, 'false');
 });
-test('conflicting, extra, duplicate, or incomplete upload records are never replaced', t => {
-  for (const defect of ['digest', 'extra', 'duplicate', 'duplicate-id', 'invalid-id', 'state']) {
-    const f = fixture(t); f.state.release = { id: 7, tag_name: 'v1.7.0', draft: true, prerelease: true };
-    const asset = f.asset(path.join(f.options.directory, 'binary.tar.gz'));
-    if (defect === 'digest') asset.digest = 'sha256:' + '0'.repeat(64);
-    if (defect === 'extra') asset.name = 'unreviewed';
-    if (defect === 'state') asset.state = 'starter';
-    if (defect === 'invalid-id') asset.id = 0;
-    f.state.assets.push(asset); if (defect === 'duplicate') f.state.assets.push(asset);
-    if (defect === 'duplicate-id') f.state.assets.push({ ...f.asset(path.join(f.options.directory, 'binary.tar.gz.sha256')), id: asset.id });
-    assert.throws(f.run, /existing release asset differs/);
-    assert.deepEqual(f.state.uploads, []); assert.deepEqual(f.state.mutations, []);
-  }
-});
-test('a matching published release is read-only and idempotent', t => {
-  const f = fixture(t); f.run(); f.state.mutations = []; f.state.uploads = [];
-  f.run(); assert.deepEqual(f.state.mutations, []); assert.deepEqual(f.state.uploads, []);
-  f.state.assets.pop(); assert.throws(f.run, /inventory is incomplete/);
-  assert.deepEqual(f.state.mutations, []);
-});
-test('wrong source tags and non-immutable published releases fail closed', t => {
-  const f = fixture(t); f.state.tag = 'b'.repeat(40);
-  assert.throws(f.run, /source commit/); assert.deepEqual(f.state.mutations, []);
-  f.state.tag = f.options.commit; f.run(); f.state.release.immutable = false; f.state.mutations = [];
-  assert.throws(f.run, /not immutable/); assert.deepEqual(f.state.mutations, []);
-});
-
-test('promotion changes only flags after every exact prerequisite succeeds', t => {
-  const f = fixture(t); f.run();
-  const assets = structuredClone(f.state.assets);
-  f.state.mutations = []; f.state.uploads = [];
-  assert.equal(f.promote().prerelease, false);
-  assert.deepEqual(f.state.mutations, [{ endpoint: 'repos/neverhuman/jankurai-audit/releases/7', method: 'PATCH',
-    body: { prerelease: false, make_latest: 'true' } }]);
-  assert.deepEqual(f.state.assets, assets); assert.deepEqual(f.state.uploads, []);
-  f.state.mutations = [];
-  f.promote(); f.run();
+test('a dry run makes no writes and reports the plan', async t => {
+  const f = fixture(t); assert.equal(await f.run({ dryRun: true }), null);
   assert.deepEqual(f.state.mutations, []); assert.deepEqual(f.state.uploads, []);
+  assert.match(f.state.logs.join('\n'), /would create draft release "Jankurai v1\.7\.2"/);
+  assert.equal(f.state.logs.filter(line => /would upload/.test(line)).length, 3);
 });
-
-for (const lane of PROMOTION_JOBS) {
-  for (const outcome of ['failure', 'cancelled', 'skipped', null]) test(`promotion refuses ${lane} outcome ${outcome}`, t => {
-    const f = fixture(t); f.run(); f.state.mutations = [];
-    f.state.jobs.find(job => job.name === lane).conclusion = outcome;
-    assert.throws(f.promote, /prerequisite has not succeeded/);
-    assert.equal(f.state.release.prerelease, true); assert.deepEqual(f.state.mutations, []);
-  });
-}
-
-test('promotion rejects missing, renamed, extra, duplicate, empty and stale-head job collections', t => {
-  for (const change of [
-    jobs => jobs.slice(1),
-    jobs => jobs.map((job, i) => i === 0 ? { ...job, name: 'renamed' } : job),
-    jobs => [...jobs, { ...jobs[0], name: 'extra' }],
-    jobs => [...jobs.slice(1), jobs[1]],
-    () => [],
-    jobs => jobs.map((job, i) => i === 0 ? { ...job, head_sha: 'b'.repeat(40) } : job),
-    jobs => jobs.map((job, i) => i === 0 ? { ...job, status: 'in_progress' } : job),
-  ]) {
-    const f = fixture(t); f.run(); f.state.mutations = []; f.state.jobs = change(f.state.jobs);
-    assert.throws(f.promote); assert.deepEqual(f.state.mutations, []); assert.equal(f.state.release.prerelease, true);
-  }
+test('a retry resumes a matching partial draft and uploads only missing assets', async t => {
+  const f = fixture(t); f.state.failUpload = true;
+  await assert.rejects(f.run(), /interrupted upload/);
+  f.state.failUpload = false; f.state.assets.push(f.asset(path.join(f.options.directory, 'binary.tar.gz')));
+  await f.run();
+  assert.deepEqual(f.state.uploads.sort(), ['binary.tar.gz.cosign.bundle', 'binary.tar.gz.sha256']);
+  assert.equal(f.state.mutations.filter(m => m.method === 'POST').length, 1);
 });
-
-test('promotion refuses a different workflow, attempt, source, event, ref or job', t => {
-  for (const change of [
-    f => { f.state.run.path = '.github/workflows/ci.yml'; },
-    f => { f.state.run.run_attempt = 1; },
-    f => { f.state.run.head_sha = 'b'.repeat(40); },
-    f => { f.state.run.event = 'workflow_dispatch'; },
-    f => { f.state.run.status = 'completed'; f.state.run.conclusion = 'failure'; },
-    f => { f.env.GITHUB_REF = 'refs/heads/main'; },
-    f => { Object.assign(f.state.jobs.at(-1), { status: 'completed', conclusion: 'failure' }); },
-    f => { f.env.GITHUB_JOB = 'publish'; },
-    f => { f.env.GITHUB_RUN_ID = ''; },
-    f => { f.env.GITHUB_RUN_ATTEMPT = '0'; },
-  ]) {
-    const f = fixture(t); f.run(); f.state.mutations = []; change(f);
-    assert.throws(f.promote); assert.deepEqual(f.state.mutations, []);
-  }
-});
-
-test('promotion preserves drafts, incomplete inventories and changed tags on refusal', t => {
-  for (const change of [
-    f => { f.state.release.draft = true; },
-    f => { f.state.release.immutable = false; },
-    f => { f.state.release.immutable = 'true'; },
-    f => { delete f.state.release.draft; },
-    f => { f.state.release.prerelease = 'true'; },
-    f => { f.state.assets.pop(); },
-    f => { f.state.assets[0].digest = 'sha256:' + '0'.repeat(64); },
-    f => { f.state.tag = 'b'.repeat(40); },
-  ]) {
-    const f = fixture(t); f.run(); f.state.mutations = []; change(f);
-    assert.throws(f.promote); assert.deepEqual(f.state.mutations, []);
-  }
-});
-
-test('promotion fails on unavailable GitHub evidence and verifies post-promotion asset identities', t => {
-  const f = fixture(t); f.run(); f.state.mutations = [];
-  assert.throws(() => promoteRelease(f.options, f.env, () => { throw new Error('API unavailable'); }), /API unavailable/);
+test('conflicting or extra uploaded assets are never replaced', async t => {
+  const f = fixture(t); f.state.release = { id: 7, tag_name: 'v1.7.2', draft: true };
+  f.state.assets.push({ ...f.asset(path.join(f.options.directory, 'binary.tar.gz')), digest: 'sha256:' + '0'.repeat(64) });
+  await assert.rejects(f.run(), /differs from the verified inventory: binary\.tar\.gz/);
+  f.state.assets = [{ id: 1, name: 'extra.bin', state: 'uploaded', size: 1, digest: 'sha256:x' }];
+  await assert.rejects(f.run(), /extra\.bin/);
   assert.deepEqual(f.state.mutations, []);
-  assert.throws(() => promoteRelease(f.options, f.env, (endpoint, body, method) => {
-    const result = f.api(endpoint, body, method);
-    if (method === 'PATCH') f.state.assets[0].id += 1000;
-    return result;
-  }), /asset identity changed/);
-  assert.equal(f.state.mutations.length, 1); assert.equal(f.state.uploads.length, 2);
 });
-
-
-test('failed-job reruns reuse successful prerequisites from this run without rebuilding immutable assets', t => {
-  const f = fixture(t); f.run(); f.state.mutations = []; f.state.uploads = [];
-  for (const job of f.state.jobs) if (job.name !== 'promote' && !job.name.startsWith('smoke ')) job.run_attempt = 1;
-  const smoke = f.state.jobs.find(job => job.name === 'smoke (ubuntu-24.04)');
-  f.state.jobs.push({ ...smoke, id: 2000, run_attempt: 1, conclusion: 'failure' });
-  assert.equal(f.promote().prerelease, false);
-  assert.deepEqual(f.state.uploads, []);
+test('a matching published release is idempotent; a mismatching one is refused', async t => {
+  const f = fixture(t); await f.run(); const writes = f.state.mutations.length;
+  await f.run(); assert.equal(f.state.mutations.length, writes);
+  fs.writeFileSync(path.join(f.options.directory, 'binary.tar.gz'), 'rebuilt');
+  await assert.rejects(f.run(), /differs from the verified inventory/);
 });
-
-test('an older success cannot hide a later failure or malformed job identity', t => {
-  for (const change of [
-    f => { f.state.jobs.push({ ...f.state.jobs[0], id: 2000, run_attempt: 1 }); f.state.jobs[0].conclusion = 'failure'; },
-    f => { f.state.jobs[0].run_id = 124; },
-    f => { f.state.jobs[0].run_attempt = 3; },
-    f => { f.state.jobs[0].run_attempt = 0; },
-    f => { delete f.state.jobs[0].run_attempt; },
-    f => { f.state.jobs[0].id = f.state.jobs[1].id; },
-    f => { f.state.jobs.at(-1).run_attempt = 1; },
-    f => { f.state.jobs.push({ ...f.state.jobs[0], id: 2000 }); },
-  ]) {
-    const f = fixture(t); f.run(); f.state.mutations = []; change(f);
-    assert.throws(f.promote); assert.deepEqual(f.state.mutations, []); assert.equal(f.state.release.prerelease, true);
-  }
+test('the GitHub tag must exist and name the built commit', async t => {
+  const f = fixture(t); f.state.tag = 'b'.repeat(40);
+  await assert.rejects(f.run(), /is not the built commit/);
+  f.state.missingTag = true;
+  await assert.rejects(f.run(), /mirror must carry it/);
+  assert.deepEqual(f.state.mutations, []);
 });
-test('publication and promotion refuse the pre-rename hub repository', t => {
-  for (const repository of ['neverhuman/jankurai', 'fork/jankurai-audit']) {
-    const f = fixture(t); f.options.repository = repository; f.env.GITHUB_REPOSITORY = repository;
-    assert.throws(f.run, /invalid release identity/);
-    assert.throws(f.promote, /invalid release identity/);
-    assert.deepEqual(f.state.mutations, []);
-  }
+test('only the hub mirror and plain release tags are publishable', async t => {
+  const f = fixture(t);
+  await assert.rejects(f.run({ repository: 'neverhuman/jankurai' }), /invalid release identity/);
+  await assert.rejects(f.run({ tag: 'v1.7.2-rc1' }), /invalid release identity/);
+});
+test('release commit comes from agreeing v2 provenance files', t => {
+  const f = fixture(t), dir = f.options.directory;
+  const write = (target, data) => fs.writeFileSync(path.join(dir, `provenance-${target}.json`), JSON.stringify(data));
+  assert.throws(() => releaseCommit(dir, 'v1.7.2'), /lacks Linux provenance/);
+  write('x86_64-unknown-linux-gnu', { schema: 'jankurai.release/v2', tag: 'v1.7.2', commit });
+  assert.equal(releaseCommit(dir, 'v1.7.2'), commit);
+  write('aarch64-apple-darwin', { schema: 'jankurai.release/v2', tag: 'v1.7.2', commit: 'c'.repeat(40) });
+  assert.throws(() => releaseCommit(dir, 'v1.7.2'), /disagree/);
+  write('aarch64-apple-darwin', { schema: 'jankurai.release/v1', tag: 'v1.7.2', commit });
+  assert.throws(() => releaseCommit(dir, 'v1.7.2'), /not provenance for v1\.7\.2/);
+});
+test('the token file must be private, regular and hold one token', t => {
+  const f = fixture(t), file = path.join(f.options.directory, 'token');
+  fs.writeFileSync(file, 'ghp_fixture\n', { mode: 0o600 });
+  assert.equal(readToken(file), 'ghp_fixture');
+  fs.chmodSync(file, 0o640); assert.throws(() => readToken(file), /group\/others/);
+  fs.chmodSync(file, 0o600); fs.symlinkSync(file, `${file}.link`);
+  assert.throws(() => readToken(`${file}.link`), /not a link/);
+  fs.writeFileSync(file, 'two tokens\n'); assert.throws(() => readToken(file), /exactly one token/);
+});
+test('a dry-run client refuses every write even with a token', async () => {
+  const { api, upload } = githubClient('ghp_fixture', { readOnly: true });
+  await assert.rejects(api('POST', 'repos/x/y/releases', {}), /dry run/);
+  await assert.rejects(upload({ id: 1 }, 'a', '/dev/null'), /dry run/);
+  await assert.rejects(githubClient(null).api('PATCH', 'repos/x/y/releases/1', {}), /without a token/);
+});
+test('the CLI refuses to publish an inventory that does not verify', t => {
+  const f = fixture(t);
+  const result = spawnSync(process.execPath, [path.join(hub, 'ops/release/publish-github-release.mjs'), '--tag', 'v1.7.2', '--dist', f.options.directory, '--dry-run'],
+    { encoding: 'utf8', env: { ...process.env, COSIGN: process.execPath } });
+  assert.notEqual(result.status, 0); assert.match(result.stderr, /refusing to publish|not the pinned/);
 });

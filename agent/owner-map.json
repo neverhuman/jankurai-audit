@@ -17,6 +17,7 @@
     "Justfile": "ops",
     "action.yml": "ops",
     "jankurai-installer.sh": "ops",
+    "release-keys/": "ops",
     "agent/": "agent",
     "ops/": "ops",
     "scripts/": "ops",

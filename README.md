@@ -53,16 +53,17 @@ The locked auditor's rule catalog is
 Linux x86-64 and Apple Silicon macOS:
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/neverhuman/jankurai-audit/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.2/jankurai-installer.sh | bash -s -- --tag v1.7.2'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
 # jankurai 1.7.2
 jankurai audit .
 ```
 
-The installer verifies checksums, Sigstore signatures, GitHub attestations, and
-embedded provenance, then runs the staged binary before replacing an existing
-install. Native Windows, Intel macOS, Linux ARM64, and Alpine/musl are not
+The installer verifies checksums, the release signature (v1.7.2 and later are
+signed with our pinned release key; earlier releases keep their GitHub workflow
+signatures and attestations), and embedded provenance, then runs the staged
+binary before replacing an existing install. Native Windows, Intel macOS, Linux ARM64, and Alpine/musl are not
 supported.
 
 `v1.7.2` includes `jankurai init`, a pre-commit that runs `diff-audit`, and
