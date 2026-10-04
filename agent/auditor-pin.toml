@@ -1,0 +1,19 @@
+# The single family auditor pin.
+#
+# Every family member declares `auditor_version` in agent/standard-version.toml
+# and every member that ships a GitHub Action declares a `release-tag` default
+# in action.yml. Before this file existed those values drifted apart, so scores
+# and baselines across the family could come from different engines.
+# scripts/validate-family.mjs now fails when a member disagrees with the pin
+# below, naming every repository that does.
+#
+# Changing the pin is a release decision, and the governed scorer the forge runs
+# (jeryu/jankurai) is NOT re-cut by this file: a person still has to re-cut and
+# re-install the governed build, then record its `binary_sha256` here. Until
+# that happens `binary_sha256` stays "pending"; the validator accepts the
+# sentinel and checks nothing about the binary, because no committed file can
+# prove a hash the family has not measured yet.
+schema_version = "1.0.0"
+version = "1.7.2"
+release_tag = "v1.7.2"
+binary_sha256 = "pending"

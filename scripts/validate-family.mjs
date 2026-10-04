@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Family } from './family-model.mjs';
 import { clean, exists, gitText, readToml } from './family-lib.mjs';
+import { validateAuditorPin } from './auditor-pin.mjs';
 
 function validateDependencies(file, root) {
   const queue = [readToml(file)];
@@ -34,6 +35,7 @@ try {
   const family = new Family(path.dirname(path.dirname(fileURLToPath(import.meta.url))));
   const checkouts = process.argv.includes('--checkouts');
   readToml(path.join(family.hub, 'Cargo.lock'));
+  validateAuditorPin(family);
   for (const repo of family.repos) {
     if (!family.existing(repo)) {
       if (checkouts) throw new Error(`missing component: ${repo.name}`);

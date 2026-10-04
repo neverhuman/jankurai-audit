@@ -6,6 +6,19 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+### Added
+
+- `agent/auditor-pin.toml` declares one auditor version (`1.7.2`, release tag
+  `v1.7.2`) for the whole family, plus the governed binary's `binary_sha256`
+  (`pending` until a person measures it). `scripts/validate-family.sh` now fails
+  and names every repository whose `agent/standard-version.toml`
+  `auditor_version` or `action.yml` `release-tag` default disagrees, so scores
+  and baselines can no longer come from different engines unnoticed. Member
+  checkouts are only judged when present; `--checkouts` covers the family. The
+  hub's own `auditor_version` moves from `1.6.0` to the pin; the other members
+  and `jankurai-deploy`'s Action default are updated in their own repositories,
+  and re-cutting and re-installing the governed scorer stays a person's step.
+
 ### Changed
 
 - Releases are built on our own build hosts and signed with a release key we

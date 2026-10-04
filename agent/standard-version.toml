@@ -1,6 +1,6 @@
 standard = "jankurai"
 standard_version = "0.9.0"
-auditor_version = "1.6.0"
+auditor_version = "1.7.2"
 schema_version = "1.9.0"
 target_stack = "rust-ts-vite-react-postgres-bounded-python"
 split_family = "jankurai"

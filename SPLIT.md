@@ -24,6 +24,20 @@ Public hub, installer, GitHub Action, family manifest, lock, and local fusion.
 - Committed manifests must not depend on sibling checkout paths.
 - Generated outputs are regenerated from their source contracts or build commands.
 
+## Family Auditor Pin
+
+`agent/auditor-pin.toml` in this hub is the one auditor version the whole family
+runs. `scripts/validate-family.mjs` fails, naming every repository that
+disagrees, when a member checkout declares a different `auditor_version` in
+`agent/standard-version.toml` or a different `release-tag` default in its
+`action.yml`. Members are only checked when their checkout is present, so run
+`bash scripts/validate-family.sh --checkouts` for the whole family.
+
+Moving the pin is a release decision, and it does not change any live score by
+itself: a person still has to re-cut and re-install the governed scorer the
+forge runs (`jeryu/jankurai`), then record its `binary_sha256` in the pin file.
+Until that measurement exists the field stays `pending`.
+
 ## Required Local Check
 
 ```bash
