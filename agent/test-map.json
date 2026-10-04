@@ -95,7 +95,7 @@
     },
     "contracts/": {
       "command": "bash scripts/validate-family.sh",
-      "purpose": "verify the family manifest contract stays coherent with the manifest and lock"
+      "purpose": "verify the family manifest and gate contracts stay coherent with the manifest, lock and member lane surfaces"
     },
     "assets/": {
       "command": "bash scripts/validate-family.sh",

@@ -10,5 +10,6 @@ case "$lane" in
   fast)     bash ops/ci/fast.sh ;;
   security) bash ops/ci/security.sh ;;
   audit)    bash ops/ci/audit.sh ;;
-  *) echo "usage: $0 {required|fast|security|audit}" >&2; exit 2 ;;
+  gates|all) bash ops/ci/quality-gates.sh ;;
+  *) echo "usage: $0 {required|fast|security|audit|gates|all}" >&2; exit 2 ;;
 esac

@@ -8,6 +8,21 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ### Added
 
+- `contracts/gate-contract.md` defines the lane surface every member of the
+  family owns: `bash scripts/ci-local.sh <lane>` dispatching to
+  `ops/ci/<lane>.sh` for `required`, `fast`, `security`, `audit` and `gates`
+  (`all` is an alias of `gates`), a default of `required`, exit 2 for an unknown
+  lane, and a `required` lane that compiles the member and runs its tests
+  offline (`--locked --offline`) without downloading anything.
+  `bash scripts/validate-family.sh --gate-contract` parses each present member's
+  dispatcher and required lane and reports every violation; it is advisory and
+  `--gate-contract-blocking` makes it fail. A plain `validate-family` run does
+  not perform the check, so the family's existing gate is unchanged. The hub's
+  own surface is brought up to the contract: `scripts/ci-local.sh` gains the
+  `gates|all` lane, and the `required` lane now runs the hub's test suite
+  instead of the family validator alone. Fixing the other members' lanes happens
+  in their own repositories.
+
 - `agent/auditor-pin.toml` declares one auditor version (`1.7.2`, release tag
   `v1.7.2`) for the whole family, plus the governed binary's `binary_sha256`
   (`pending` until a person measures it). `scripts/validate-family.sh` now fails

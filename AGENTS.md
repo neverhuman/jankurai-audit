@@ -8,4 +8,4 @@ Read `SPLIT.md` first. This repository is one member of the Jankurai split famil
 - Do not add committed cross-repo `path = "../..."` dependencies. Use the hub fusion workspace for local path patches.
 - Do not hand-edit generated artifacts listed in `agent/generated-zones.toml`.
 - `agent/auditor-pin.toml` is the family's single auditor version. Never edit a member's `auditor_version` or `release-tag` default to disagree with it; move the pin instead (see `SPLIT.md`).
-- Run `bash scripts/ci-local.sh required` before handing off changes.
+- Run `bash scripts/ci-local.sh required` before handing off changes. `contracts/gate-contract.md` defines what that command owns in every member; check a lane surface with `bash scripts/validate-family.sh --gate-contract`.

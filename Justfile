@@ -64,6 +64,11 @@ security:
 audit:
     .fusion/target/debug/jankurai audit . --no-score-history --json .jankurai/repo-score.json --md .jankurai/repo-score.md
 
+# Report every present member whose lane surface leaves contracts/gate-contract.md.
+# Advisory: it prints violations and stays green. Append `-blocking` to fail.
+gate-contract:
+    bash scripts/validate-family.sh --gate-contract
+
 # Print the declared hub version.
 versions:
     cat VERSION

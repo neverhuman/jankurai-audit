@@ -38,6 +38,21 @@ itself: a person still has to re-cut and re-install the governed scorer the
 forge runs (`jeryu/jankurai`), then record its `binary_sha256` in the pin file.
 Until that measurement exists the field stays `pending`.
 
+## Family Gate Contract
+
+`contracts/gate-contract.md` defines the one lane surface every member owns:
+`bash scripts/ci-local.sh <lane>` dispatching to `ops/ci/<lane>.sh` for
+`required`, `fast`, `security`, `audit` and `gates` (with `all` as an alias of
+`gates`), defaulting to `required`, exiting 2 on an unknown lane, and a
+`required` lane that compiles the member and runs its tests offline without
+downloading anything.
+
+`bash scripts/validate-family.sh --gate-contract` parses each present member's
+`scripts/ci-local.sh` and `ops/ci/required.sh` and reports every violation. It
+is advisory: the report does not fail the run. `--gate-contract-blocking` makes
+it fail, and neither check runs in a plain `validate-family` invocation while
+the family's lane surfaces converge.
+
 ## Required Local Check
 
 ```bash
