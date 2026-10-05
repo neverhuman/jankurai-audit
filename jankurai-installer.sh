@@ -53,7 +53,7 @@ fi
 # the downloaded key file must match its pinned SHA-256. An all-zero pin means the
 # key is not provisioned yet, and every tag it covers is refused.
 release_keys='
-jankurai-release-2026.pub|0000000000000000000000000000000000000000000000000000000000000000|v1.7.2|
+jankurai-release-2026.pub|99f48af11e4e6463544652ddfaefb0e9953de15fb0802b174123ac2907ff06fc|v1.7.2|
 '
 version_number() {
   local major minor patch
