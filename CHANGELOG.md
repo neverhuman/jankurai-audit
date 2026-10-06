@@ -30,6 +30,12 @@ block.
   TypeScript boundary cast, and still fires on empty boundary calls such as
   `response.json() as any`.
 - The installer and Action default to `v1.7.3`.
+- The installer downloads through one bounded `download()` helper, the same
+  as the jankurai-action copy: up to 4 attempts, a 15s connect timeout, 60s
+  per attempt (180s overall), the caller's curl configuration ignored
+  (`--disable`), and HTTPS-only redirects. Verification still runs only on a
+  complete transfer. New tests drive real curl against a local HTTPS server
+  through a reset, a truncated body and exhaustion.
 
 ### Added
 
