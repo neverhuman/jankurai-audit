@@ -6,6 +6,31 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+## 1.7.3 - 2026-10-06
+
+1.7.3 carries the governed split.6 scoring (`jeryu/jankurai`
+`v1.6.11-deadlang-precision-split.6`), except where the owner chose 1.7
+behaviour: an omitted `fail_on` means critical+high, and conformance blockers
+block.
+
+### Changed
+
+- Public release is `1.7.3`. `jankurai`, `tuiwright`, and `@jankurai/ux-qa` report that version. Standard `0.9.0` and schema `1.9.0` are unchanged.
+- `agent/auditor-pin.toml` pins `1.7.3` (`v1.7.3`), and every member declares
+  it, so `validate-family` holds across the family again. On 1.7.2 main,
+  thirteen members still declared `auditor_version` `1.6.0`, `1.6.11` or
+  `1.7.1`, and the deploy Action defaulted to `v1.7.0-split.0`.
+- Scoring follows split.6 provider-aware CI credit. Proof CI presence, the speed
+  CI cache hint and the security workflow-lint check read the resolved
+  `.jeryu/ci.toml` lane, the same as a GitHub workflow; the declaration alone
+  earns nothing. Workflow linting is not applicable without workflow files.
+  npm/pnpm/yarn lanes resolve through package.json scripts. A declared lane
+  that resolves to nothing is a soft finding at `.jeryu/ci.toml`.
+- HLT-031 no longer reads prose `as` in comments, strings or import aliases as a
+  TypeScript boundary cast, and still fires on empty boundary calls such as
+  `response.json() as any`.
+- The installer and Action default to `v1.7.3`.
+
 ### Added
 
 - `contracts/gate-contract.md` defines the lane surface every member of the

@@ -1,5 +1,20 @@
-Jankurai v1.7.2 is the first release built on our own build hosts and signed with
-the Jankurai release key. GitHub is now only where releases are published.
+Jankurai v1.7.3 brings the public auditor in line with the provider-aware CI
+crediting of the governed build. It is built on our own build hosts and signed
+with the Jankurai release key, as v1.7.2 was. GitHub is only where releases are
+published.
+
+Scoring changes from v1.7.2:
+
+- A repository gated by the jeryu forge earns proof CI presence, the speed CI
+  cache hint and the security workflow-lint check from the resolved lane its
+  `.jeryu/ci.toml` declares, as a GitHub workflow does. The declaration alone
+  still earns nothing. Workflow linting is not applicable without workflow files.
+- `npm test`, `npm run <script>`, `pnpm run <script>` and `yarn <script>` lanes
+  resolve through package.json scripts.
+- A declared lane that resolves to no repository content is reported as a soft
+  finding at `.jeryu/ci.toml`.
+- HLT-031 no longer reads prose `as` in comments, string literals or import
+  aliases as a TypeScript boundary cast.
 
 Public products are the Jankurai auditor, the Tuiwright CLI, and the UX QA npm CLI
 package. Each native tarball holds the binary, its license, the family lock, the
