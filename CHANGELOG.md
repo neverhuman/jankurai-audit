@@ -30,6 +30,14 @@ block.
   TypeScript boundary cast, and still fires on empty boundary calls such as
   `response.json() as any`.
 - The installer and Action default to `v1.7.3`.
+- Linux releases are compiled inside a digest-pinned Debian 12 builder
+  (`ops/release/builder/Dockerfile`: `rust:1.97.1-bookworm` by digest, Node.js
+  by SHA-256), so `x86_64-unknown-linux-gnu` binaries need at most glibc 2.36 and
+  run on bookworm. v1.7.2 needed GLIBC_2.39. `build-release.sh --builder
+  container` is the Linux default; Git and crates.io sources are fetched on the
+  host and the container compiles offline. The provenance `builder` records the
+  image, its ID, the base digest, the Dockerfile SHA-256 and the builder glibc,
+  and `toolchain` is the container's.
 - The installer downloads through one bounded `download()` helper, the same
   as the jankurai-action copy: up to 4 attempts, a 15s connect timeout, 60s
   per attempt (180s overall), the caller's curl configuration ignored

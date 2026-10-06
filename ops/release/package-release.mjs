@@ -61,6 +61,10 @@ export function packageRelease({ source, target, out, tooling, tag }) {
     }
   }
   const fusion = path.join(source, '.fusion');
+  // A container build (ops/release/builder) records its image and toolchain;
+  // a host build describes this host.
+  const record = process.env.JANKURAI_RELEASE_BUILDER_RECORD
+    ? JSON.parse(fs.readFileSync(process.env.JANKURAI_RELEASE_BUILDER_RECORD, 'utf8')) : null;
   const provenance = {
     schema: 'jankurai.release/v2', version, tag, target,
     repository: 'https://github.com/neverhuman/jankurai-audit',
@@ -74,11 +78,14 @@ export function packageRelease({ source, target, out, tooling, tag }) {
     components: fs.readFileSync(path.join(source, 'family.lock'), 'utf8')
       .split('[[repo]]').slice(1).map(block => ({
         repo: /repo = "([^"]+)"/.exec(block)[1], commit: /commit = "([0-9a-f]{40})"/.exec(block)[1] })),
-    toolchain: {
+    toolchain: record?.toolchain ?? {
       rustc: run(['rustc', '-vV'], { cwd: source }), cargo: run(['cargo', '--version'], { cwd: source }),
       node: process.version, npm: run(['npm', '--version'], { cwd: source }),
     },
-    builder: { kind: 'server', host: `${os.type()}/${os.machine?.() ?? os.arch()}` },
+    builder: record
+      ? { kind: 'container', host: `${os.type()}/${os.machine?.() ?? os.arch()}`, image: record.image,
+        image_id: record.image_id, base_image: record.base_image, dockerfile_sha256: record.dockerfile_sha256, glibc: record.glibc }
+      : { kind: 'server', host: `${os.type()}/${os.machine?.() ?? os.arch()}` },
     release_tooling: {
       commit: run(['git', '-C', tooling, 'rev-parse', 'HEAD']),
       clean: run(['git', '-C', tooling, 'status', '--porcelain']) === '',

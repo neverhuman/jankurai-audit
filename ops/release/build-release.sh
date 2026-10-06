@@ -12,7 +12,7 @@ usage() {
   cat <<'EOF'
 usage: build-release.sh --tag vX.Y.Z [--target triple] [--out dir] [--workdir dir]
                         [--members hosted|mirror|<checkout-root>] [--source-repo path]
-                        [--expect-commit sha]
+                        [--expect-commit sha] [--builder container|host]
 
   --target         defaults to this host: x86_64-unknown-linux-gnu or aarch64-apple-darwin.
                    Cross builds are refused; build each target on a host of that platform.
@@ -23,10 +23,15 @@ usage: build-release.sh --tag vX.Y.Z [--target triple] [--out dir] [--workdir di
                    Git credentials); every tag is checked against its locked commit.
   --source-repo    repository holding the release tag (default: this checkout).
   --expect-commit  refuse unless the tag names this commit.
+  --builder        container (the Linux default) compiles inside the digest-pinned Debian 12
+                   image of ops/release/builder/Dockerfile, so the binaries need at most
+                   glibc 2.36; the image is recorded in the provenance. host compiles with
+                   this host's toolchain (the macOS default; on Linux the binaries then need
+                   this host's glibc).
 EOF
 }
 
-tag='' target='' out='' workdir='' members=hosted source_repo="$release_tooling" expect=''
+tag='' target='' out='' workdir='' members=hosted source_repo="$release_tooling" expect='' builder=''
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --tag) tag="${2:?}"; shift 2 ;;
@@ -36,6 +41,7 @@ while [[ $# -gt 0 ]]; do
     --members) members="${2:?}"; shift 2 ;;
     --source-repo) source_repo="${2:?}"; shift 2 ;;
     --expect-commit) expect="${2:?}"; shift 2 ;;
+    --builder) builder="${2:?}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; fail "unknown argument: $1" ;;
   esac
@@ -44,6 +50,11 @@ valid_release_tag "$tag" || fail 'a release tag vX.Y.Z is required'
 host="$(host_target)" || fail 'unsupported build host; use Linux x86-64 or Apple Silicon macOS'
 target="${target:-$host}"
 [[ "$target" == "$host" ]] || fail "cross builds are not supported: build $target on a $target host"
+case "${builder:=$([[ "$target" == *-linux-gnu ]] && echo container || echo host)}" in
+  container) [[ "$target" == *-linux-gnu ]] || fail 'the container builder builds Linux targets only' ;;
+  host) [[ "$target" != *-linux-gnu ]] || note "warning: a host build links against this host's glibc ($(ldd --version 2>/dev/null | head -1)); published Linux releases use --builder container" ;;
+  *) fail "unknown builder: $builder (container or host)" ;;
+esac
 out="$(mkdir -p "${out:-$release_tooling/target/release-dist/$tag}" && cd "${out:-$release_tooling/target/release-dist/$tag}" && pwd)"
 workdir="${workdir:-$release_tooling/target/release-build/$tag-$target}"
 if [[ -e "$workdir" ]] && [[ -n "$(ls -A "$workdir")" ]]; then
@@ -56,6 +67,7 @@ case "$workdir/" in
   "$HOME"/*) note "warning: the jankurai binary embeds its build root ($workdir/src); for a published build use a neutral --workdir such as /srv/jankurai-release/$tag-$target" ;;
 esac
 for tool in git node npm cargo rustc rustup tar; do command -v "$tool" >/dev/null || fail "missing build tool: $tool"; done
+[[ "$builder" != container ]] || command -v docker >/dev/null || fail 'missing build tool: docker (needed by --builder container)'
 
 # Ambient Cargo configuration above the build tree would change the build.
 dir="$workdir"
@@ -88,16 +100,70 @@ node "$release_tooling/ops/release/compose-source.mjs" clone "$src" "$members"
 # Reproducibility: the tag's commit time, and build paths mapped to fixed names.
 export SOURCE_DATE_EPOCH
 SOURCE_DATE_EPOCH="$(git -C "$src" show -s --format=%ct "$commit")"
-cargo_home="${CARGO_HOME:-$HOME/.cargo}"
-sysroot="$(cd "$src" && rustc --print sysroot)"
-export RUSTFLAGS="--remap-path-prefix=$workdir/src=/jankurai --remap-path-prefix=$cargo_home=/cargo --remap-path-prefix=$sysroot=/rust"
 export CARGO_INCREMENTAL=0 CARGO_NET_GIT_FETCH_WITH_CLI=true TZ=UTC LC_ALL=C
 unset CARGO_TARGET_DIR CARGO_BUILD_TARGET_DIR CARGO_BUILD_RUSTFLAGS CARGO_ENCODED_RUSTFLAGS
 
-note "Building $tag for $target ($rustc_version)"
-(cd "$src" && bash scripts/family.sh build --release --target "$target")
-# The native exchange and recovery primitives are platform-specific; exercise them here.
-(cd "$src" && node --test scripts/family-operation-review.test.mjs scripts/family-recovery.test.mjs)
+if [[ "$builder" == container ]]; then
+  dockerfile="$release_tooling/ops/release/builder/Dockerfile"
+  dockerfile_sha256="$(sha256 "$dockerfile")"
+  base_image="$(sed -n 's/^FROM \(.*@sha256:[0-9a-f]\{64\}\)$/\1/p' "$dockerfile")"
+  [[ -n "$base_image" ]] || fail 'ops/release/builder/Dockerfile must pin its base image by digest'
+  image="jankurai-release-builder:${dockerfile_sha256:0:16}"
+  if ! docker image inspect "$image" >/dev/null 2>&1; then
+    note "Building the release builder image $image"
+    docker build --quiet --tag "$image" --file "$dockerfile" "$(dirname "$dockerfile")" >/dev/null
+  fi
+  image_id="$(docker image inspect --format '{{.Id}}' "$image")"
+  # A private Cargo home under the workdir: Git and crates.io sources are fetched
+  # here on the host, where the member credentials live, and the container
+  # compiles offline. Build paths keep the same names inside the container.
+  cargo_home="$workdir/cargo-home"
+  mkdir -p "$cargo_home" "$workdir/home" "$workdir/etc"
+  # The build user needs an account entry (Node's os.userInfo); name only it.
+  printf 'root:x:0:0::/root:/bin/sh\nbuilder:x:%s:%s::%s:/bin/sh\n' "$(id -u)" "$(id -g)" "$workdir/home" > "$workdir/etc/passwd"
+  printf 'root:x:0:\nbuilder:x:%s:\n' "$(id -g)" > "$workdir/etc/group"
+  in_builder() {
+    docker run --rm --network host --user "$(id -u):$(id -g)" \
+      --volume "$workdir:$workdir" --workdir "$src" \
+      --volume "$workdir/etc/passwd:/etc/passwd:ro" --volume "$workdir/etc/group:/etc/group:ro" \
+      --env HOME="$workdir/home" --env CARGO_HOME="$cargo_home" --env CARGO_NET_OFFLINE=true \
+      --env SOURCE_DATE_EPOCH --env CARGO_INCREMENTAL --env CARGO_NET_GIT_FETCH_WITH_CLI \
+      --env TZ --env LC_ALL --env RUSTFLAGS="${RUSTFLAGS:-}" "$image" "$@"
+  }
+  sysroot="$(in_builder rustc --print sysroot)"
+  rustc_version="$(in_builder rustc --version)"
+  [[ "$rustc_version" == "rustc $channel "* ]] || fail "builder toolchain is not $channel: $rustc_version"
+  export RUSTFLAGS="--remap-path-prefix=$workdir/src=/jankurai --remap-path-prefix=$cargo_home=/cargo --remap-path-prefix=$sysroot=/rust"
+  note "Fetching Cargo sources on the host into $cargo_home"
+  (cd "$src" && bash scripts/family.sh fuse)
+  (cd "$src/.fusion" && CARGO_HOME="$cargo_home" cargo fetch --locked)
+  note "Building $tag for $target in $image ($rustc_version)"
+  in_builder bash -c 'bash scripts/family.sh build --release --target "$1" &&
+    node --test scripts/family-operation-review.test.mjs scripts/family-recovery.test.mjs' _ "$target"
+  record="$workdir/builder.json"
+  in_builder node -e '
+    const { execFileSync } = require("node:child_process");
+    const run = (cmd, args) => execFileSync(cmd, args, { encoding: "utf8" }).trim();
+    const [image, imageId, base, dockerfileSha] = process.argv.slice(1);
+    process.stdout.write(JSON.stringify({
+      kind: "container", image, image_id: imageId, base_image: base, dockerfile_sha256: dockerfileSha,
+      glibc: run("ldd", ["--version"]).split("\n")[0],
+      toolchain: { rustc: run("rustc", ["-vV"]), cargo: run("cargo", ["--version"]),
+        node: process.version, npm: run("npm", ["--version"]) },
+    }, null, 2) + "\n");' "$image" "$image_id" "$base_image" "$dockerfile_sha256" > "$record"
+  export JANKURAI_RELEASE_BUILDER_RECORD="$record"
+  binary="$src/.fusion/target/$target/release/jankurai"
+  glibc_needed="$(objdump -T "$binary" 2>/dev/null | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1 || true)"
+  note "jankurai needs ${glibc_needed:-an unknown glibc} (builder: $(sed -n 's/.*"glibc": "\(.*\)",*/\1/p' "$record"))"
+else
+  cargo_home="${CARGO_HOME:-$HOME/.cargo}"
+  sysroot="$(cd "$src" && rustc --print sysroot)"
+  export RUSTFLAGS="--remap-path-prefix=$workdir/src=/jankurai --remap-path-prefix=$cargo_home=/cargo --remap-path-prefix=$sysroot=/rust"
+  note "Building $tag for $target ($rustc_version)"
+  (cd "$src" && bash scripts/family.sh build --release --target "$target")
+  # The native exchange and recovery primitives are platform-specific; exercise them here.
+  (cd "$src" && node --test scripts/family-operation-review.test.mjs scripts/family-recovery.test.mjs)
+fi
 node "$release_tooling/ops/release/compose-source.mjs" verify "$src" "$commit"
 
 note "Packaging into $out"

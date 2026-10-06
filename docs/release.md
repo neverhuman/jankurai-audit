@@ -40,6 +40,9 @@ immutable. Never move one.
 tag=v1.7.3
 git fetch origin --tags
 # 1. Build (Linux x86-64). A neutral build root keeps home paths out of the binary.
+#    The compile runs in the digest-pinned Debian 12 image of ops/release/builder
+#    (needs Docker), so the binaries need at most glibc 2.36; the provenance
+#    records the image. Git and crates.io sources are fetched on the host.
 ops/release/build-release.sh --tag "$tag" --workdir "/srv/jankurai-release/$tag-x86_64-unknown-linux-gnu" \
   --out "target/release-dist/$tag"
 # 2. Optional: Apple Silicon macOS, built on a macOS build host over SSH.
