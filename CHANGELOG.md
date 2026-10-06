@@ -30,6 +30,19 @@ block.
   TypeScript boundary cast, and still fires on empty boundary calls such as
   `response.json() as any`.
 - The installer and Action default to `v1.7.3`.
+- `family.lock` pins every member at its 1.7.3 revision: core `75c30d0`,
+  kernel `33b3893`, analyzers `bbd7db9`, proof `2f187f1`, Tuiwright `1456eb4`,
+  UX `f609341`, deploy `b7875c3`, and contracts, standard, conformance, paper,
+  guard, dedup and fleet at the commits that declare the 1.7.3 auditor pin.
+  Core pins the same kernel, analyzers and proof revisions. The fused
+  `Cargo.lock` changes only the jankurai and tuiwright versions.
+
+### Fixed
+
+- `jankurai coverage` accepts complete cargo-llvm-cov 0.8.7 LCOV, whose
+  `LF`/`LH` can exceed its `DA` records; real truncation is still rejected.
+- `jankurai proofbind` no longer fails with "required input missing" on a
+  change that deletes a file.
 - Linux releases are compiled inside a digest-pinned Debian 12 builder
   (`ops/release/builder/Dockerfile`: `rust:1.97.1-bookworm` by digest, Node.js
   by SHA-256), so `x86_64-unknown-linux-gnu` binaries need at most glibc 2.36 and
