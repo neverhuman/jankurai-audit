@@ -30,8 +30,8 @@ block.
   TypeScript boundary cast, and still fires on empty boundary calls such as
   `response.json() as any`.
 - The installer and Action default to `v1.7.3`.
-- `family.lock` pins every member at its 1.7.3 revision: core `bccd9d7`,
-  kernel `cffceee`, analyzers `ff8a5e0`, proof `2f187f1`, Tuiwright `1456eb4`,
+- `family.lock` pins every member at its 1.7.3 revision: core `cf0bf4a`,
+  kernel `3051b41`, analyzers `41b2733`, proof `2f187f1`, Tuiwright `1456eb4`,
   UX `f609341`, deploy `b7875c3`, and contracts, standard, conformance, paper,
   guard, dedup and fleet at the commits that declare the 1.7.3 auditor pin.
   Core pins the same kernel, analyzers and proof revisions. The fused
