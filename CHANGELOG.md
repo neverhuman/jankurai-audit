@@ -30,8 +30,8 @@ block.
   TypeScript boundary cast, and still fires on empty boundary calls such as
   `response.json() as any`.
 - The installer and Action default to `v1.7.3`.
-- `family.lock` pins every member at its 1.7.3 revision: core `e7c01b5`,
-  kernel `e66b94c`, analyzers `8f44aeb`, proof `2f187f1`, Tuiwright `1456eb4`,
+- `family.lock` pins every member at its 1.7.3 revision: core `bccd9d7`,
+  kernel `cffceee`, analyzers `ff8a5e0`, proof `2f187f1`, Tuiwright `1456eb4`,
   UX `f609341`, deploy `b7875c3`, and contracts, standard, conformance, paper,
   guard, dedup and fleet at the commits that declare the 1.7.3 auditor pin.
   Core pins the same kernel, analyzers and proof revisions. The fused
@@ -44,9 +44,14 @@ block.
 - `jankurai proofbind` no longer fails with "required input missing" on a
   change that deletes a file.
 - `HLT-022-AUTHZ-ISOLATION-GAP` matches its authz terms as whole identifier
-  tokens, so `rls` inside `urls` or `cdpUrlSetting` no longer applies the authz
-  cap. `RLS`, `enable_rls`, `tenantId`, `isAdmin`, `ROW LEVEL SECURITY` and SQL
-  `CREATE POLICY ... USING (...)` still count as authz surfaces.
+  tokens, so `rls` inside `urls` or `cdpUrlSetting` is no longer an authz
+  surface. `RLS`, `enable_rls`, `tenantId`, `isAdmin`, `ROW LEVEL SECURITY` and
+  SQL `CREATE POLICY ... USING (...)` still count. The negative proof that
+  clears it uses the same tokens, so `urls` in a test is not `rls` proof, and
+  HLT-022 has no `jankurai:allow` opt-out.
+- A `jankurai:allow ... expires=YYYY-MM-DD` comment suppresses a finding only
+  until its expiry date (UTC); an expired, missing or malformed expiry no
+  longer suppresses anything.
 - Linux releases are compiled inside a digest-pinned Debian 12 builder
   (`ops/release/builder/Dockerfile`: `rust:1.97.1-bookworm` by digest, Node.js
   by SHA-256), so `x86_64-unknown-linux-gnu` binaries need at most glibc 2.36 and
