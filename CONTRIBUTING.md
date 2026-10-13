@@ -78,7 +78,7 @@ Public CLI commands, report schemas, and agent-facing file contracts are compati
 
 - a compatibility-preserving implementation,
 - a schema/version update with migration notes,
-- or an explicit breaking-change entry in `CHANGELOG.md`.
+- or a commit subject and `Todo:` trailer that call out the breaking change for the release notes generated from commits since the last release.
 
 ## Pull Request Expectations
 

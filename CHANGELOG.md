@@ -1,8 +1,6 @@
 # Changelog
 
-All notable user-facing changes should be recorded here.
-
-Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, and agent-facing contracts should still receive compatibility notes when they change.
+This file is written when a release is cut: its notes are generated from the commits since the previous release. Do not add entries by hand; write a commit subject that says what changed.
 
 ## Unreleased
 

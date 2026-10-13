@@ -35,6 +35,9 @@ offline, in separate places.
 
 The tag must already exist on the forge and on the GitHub mirror. Tags are
 immutable. Never move one.
+Release notes are generated from the commits since the last release, using their
+subjects and `Todo:` trailers, before `CHANGELOG.md` is updated for the new
+version.
 
 ```sh
 tag=v1.7.5
