@@ -2,14 +2,14 @@ schema_version = "1.0.0"
 family = "jankurai"
 release = "1.7.3"
 source = "repos.manifest.toml"
-generated_at = "2026-10-07T16:13:39Z"
+generated_at = "2026-10-14T02:02:42Z"
 source_repo = "root/jankurai"
 source_commit = "cea83b0cbe204be276a2f0299cd760f6812ea2b0"
 
 [[repo]]
 repo = "jankurai-core"
-tag = "ci-2ff6665b0ec757ba35b3b80edff0eefd414b8185"
-commit = "2ff6665b0ec757ba35b3b80edff0eefd414b8185"
+tag = "ci-81ba175855e0e2002a49a641b48b7baf187ec0c8"
+commit = "81ba175855e0e2002a49a641b48b7baf187ec0c8"
 
 [[repo]]
 repo = "jankurai-contracts"
@@ -53,8 +53,8 @@ commit = "595e620374572e5aefe01c982595d079ebe03e24"
 
 [[repo]]
 repo = "jankurai-tools-proof"
-tag = "ci-2f187f1640a2b556daf68497be4bd62bb41f04cf"
-commit = "2f187f1640a2b556daf68497be4bd62bb41f04cf"
+tag = "ci-281bf4cae2a020c9ad5c49f472e1f01dd8c813db"
+commit = "281bf4cae2a020c9ad5c49f472e1f01dd8c813db"
 
 [[repo]]
 repo = "jankurai-tools-dedup"
@@ -73,5 +73,5 @@ commit = "cd152f0580e701dbd7bc5c795a329d8d48debb40"
 
 [[repo]]
 repo = "jankurai-deploy"
-tag = "ci-b7875c363520d742d7b7a7a5196bcb62218be804"
-commit = "b7875c363520d742d7b7a7a5196bcb62218be804"
+tag = "ci-fd138d87c18f2479422ba7808c65bdfc545e3fc0"
+commit = "fd138d87c18f2479422ba7808c65bdfc545e3fc0"

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Family } from './family-model.mjs';
 import { clean, exists, gitText, readToml } from './family-lib.mjs';
 import { validateAuditorPin } from './auditor-pin.mjs';
+import { validateVendoredTrust } from './vendored-trust.mjs';
 import { reportGateContract } from './gate-contract.mjs';
 
 function validateDependencies(file, root) {
@@ -41,6 +42,7 @@ try {
   const gateContract = blockingGate || process.argv.includes('--gate-contract');
   readToml(path.join(family.hub, 'Cargo.lock'));
   validateAuditorPin(family);
+  validateVendoredTrust(family);
   for (const repo of family.repos) {
     if (!family.existing(repo)) {
       if (checkouts) throw new Error(`missing component: ${repo.name}`);

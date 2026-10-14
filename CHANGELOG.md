@@ -30,9 +30,16 @@ block.
   TypeScript boundary cast, and still fires on empty boundary calls such as
   `response.json() as any`.
 - The installer and Action default to `v1.7.3`.
-- `family.lock` pins every member at its 1.7.3 revision: core `2ff6665`,
-  kernel `cfa36a7`, analyzers `0c22b6d`, proof `2f187f1`, Tuiwright `1456eb4`,
-  UX `f609341`, deploy `b7875c3`, and contracts, standard, conformance, paper,
+- `validate-family` checks vendored trust material (`scripts/vendored-trust.mjs`).
+  A member that vendors the hub installer (`agent/vendor/hub-installer.lock`)
+  must carry the installer and every release-signing public key it vendors
+  (`agent/vendor/release-keys/`) byte-for-byte as the hub has them, and the
+  lock's `release_signer_sha256` must be the SHA-256 of the hub's key. A member's
+  own lane can only prove its files agree with each other; on a composed
+  family checkout this proves they are the hub's.
+- `family.lock` pins every member at its 1.7.3 revision: core `81ba175`,
+  kernel `cfa36a7`, analyzers `0c22b6d`, proof `281bf4c`, Tuiwright `1456eb4`,
+  UX `f609341`, deploy `fd138d8`, and contracts, standard, conformance, paper,
   guard, dedup and fleet at the commits that declare the 1.7.3 auditor pin.
   Core pins the same kernel, analyzers and proof revisions. The fused
   `Cargo.lock` changes only the jankurai and tuiwright versions.
@@ -42,7 +49,11 @@ block.
 - `jankurai coverage` accepts complete cargo-llvm-cov 0.8.7 LCOV, whose
   `LF`/`LH` can exceed its `DA` records; real truncation is still rejected.
 - `jankurai proofbind` no longer fails with "required input missing" on a
-  change that deletes a file.
+  change that deletes a file, and a deletion still binds obligations: the
+  deleted path is classified from its pre-image in Git and always binds a
+  `removal` obligation, so a deletion-only change set cannot pass
+  `--mode required` on zero obligations. A missing path named with `--changed`
+  is still a required input.
 - `HLT-022-AUTHZ-ISOLATION-GAP` matches its authz terms as whole identifier
   tokens, so `rls` inside `urls` or `cdpUrlSetting` is no longer an authz
   surface. `RLS`, `enable_rls`, `tenantId`, `isAdmin`, `ROW LEVEL SECURITY` and
