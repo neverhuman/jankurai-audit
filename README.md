@@ -1,5 +1,17 @@
 # Jankurai
 
+Jankurai checks a code repository and gives it a score out of 100. It reads the
+code and its configuration without running anything. Then it lists what is risky
+or missing: files nobody owns, changes with no test to prove them, code that has
+drifted from its contracts, weak security or supply-chain setup, and sloppy
+patterns ("jank"). Each finding says where the problem is and how to fix it, so a
+person or an AI agent can work down the list.
+
+Teams use it as a pull request gate. A change passes when the score stays at or
+above the floor (85 by default) and adds no new serious findings. Some patterns
+are serious enough to cap the score on their own. Jankurai does not test a
+running application, and it does not check cloud accounts or permissions.
+
 <!-- jankurai-badge:start -->
 [![Jankurai score: 91/100](agent/jankurai-badge.svg)](agent/jankurai-badge.json)
 <!-- jankurai-badge:end -->
@@ -25,10 +37,6 @@ it, so pull requests go to the forge and `<repo>/required` there is the gate.
 GitHub is a publishing mirror only: CI runs on the forge and our own hosts, and
 releases are built and signed on our servers.
 See [docs/forge-authority.md](docs/forge-authority.md).
-
-Jankurai audits a repository for unsafe changes, missing proof, unclear ownership,
-and drift between code and its contracts. It writes a reviewable report and a
-repair queue. It does not execute repository commands.
 
 ![Jankurai audit](docs/demo/audit-readme.gif)
 
