@@ -35,7 +35,10 @@ disagrees, when a member checkout declares a different `auditor_version` in
 Before a release is tagged, add `--pins-on-main`: every `family.lock` pin must
 then also be reachable from its member's `origin/main` in that checkout (fetch
 it first), so a pin to an unmerged branch tip fails even when its `ci-<sha>` tag
-exists.
+exists. The required lane runs both on a fresh composition:
+`bash scripts/locked-family.sh` clones every member from the forge at its pin
+into `target/locked-family`, beside the committed `HEAD`, and runs
+`validate-family --checkouts --pins-on-main` there.
 
 One narrow allowance: while the pinned release is being cut and is not yet
 published, the pin may name `previous_published_release_tag`, the release
