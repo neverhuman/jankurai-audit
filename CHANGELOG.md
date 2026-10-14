@@ -6,6 +6,34 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+## 1.7.5 - 2026-10-14
+
+1.7.5 is 1.7.4 plus the changed-fast `diff-audit` fix.
+
+### Fixed
+
+- `diff-audit` (changed-fast) again inventories the fixed control files split.6
+  read on every run: `README.md`, `docs/release.md`, `contracts`, `db`,
+  `schemas`, the four rendered-UX roots under `apps/`, and
+  `tools/security-lane.sh` (jankurai-core #11). They were lost when
+  jankurai-core was extracted, so in 1.7.4 an unchanged release doc, README,
+  contract surface or schemas directory was invisible to diff-audit, which
+  reported false HLT-025 findings and false `release-readiness-gap`,
+  `missing-agent-readable-docs` and contract caps on PRs whose full audit was
+  clean. diff-audit verdicts again match 1.6.11's.
+
+### Changed
+
+- Public release is `1.7.5`. `jankurai`, `tuiwright`, and `@jankurai/ux-qa`
+  report that version. Standard `0.9.0` and schema `1.9.0` are unchanged.
+- `agent/auditor-pin.toml` pins `1.7.5` (`v1.7.5`), and every member declares
+  it. `binary_sha256` stays `"pending"`: the governed build of 1.7.5 is not cut.
+- `previous_published_release_tag` is `v1.7.4`, the release right before the
+  pin, so the deploy Action may default to the published `v1.7.4` while
+  `v1.7.5` is cut. The expiry stays `2026-11-14`.
+- The installer and Action default to `v1.7.5`.
+- Full-audit scoring is unchanged from 1.7.4.
+
 ## 1.7.4 - 2026-10-14
 
 1.7.4 is 1.7.3 plus the kernel's reviewed dead-language allowances and the

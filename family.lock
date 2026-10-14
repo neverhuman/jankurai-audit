@@ -1,8 +1,8 @@
 schema_version = "1.0.0"
 family = "jankurai"
-release = "1.7.4"
+release = "1.7.5"
 source = "repos.manifest.toml"
-generated_at = "2026-10-14T14:10:30Z"
+generated_at = "2026-10-14T16:31:31Z"
 source_repo = "root/jankurai"
 source_commit = "cea83b0cbe204be276a2f0299cd760f6812ea2b0"
 

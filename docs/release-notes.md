@@ -1,18 +1,18 @@
-Jankurai v1.7.4 keeps the v1.7.3 scoring and adds reviewed dead-language
-allowances. It is built on our own build hosts and signed with the Jankurai
-release key, as v1.7.2 and v1.7.3 were. GitHub is only where releases are
-published.
+Jankurai v1.7.5 is v1.7.4 with `diff-audit` fixed. It is built on our own build
+hosts and signed with the Jankurai release key, as v1.7.2 through v1.7.4 were.
+GitHub is only where releases are published.
 
-Changes from v1.7.3:
+Changes from v1.7.4:
 
-- HLT-001 dead-language hits can be covered by reviewed `[[dead_language_allow]]`
-  records in `agent/audit-policy.toml`. Each record names its terms, the paths
-  it covers, an owner, a reason and an expiry date. A covered hit is not a
-  finding and does not cap the score. An expired or incomplete record covers
-  nothing and the hit counts again. The legacy `[dead_language] allow_terms`
-  table is still read.
-- Nothing else in scoring changes. On the 100-repository parity set the
-  v1.7.4 candidate's findings, scores, caps and decisions equal v1.7.3's.
+- `jankurai diff-audit` (the changed-fast audit) again reads the fixed control
+  files that every run needs: `README.md`, `docs/release.md`, `contracts`, `db`,
+  `schemas`, the rendered-UX roots under `apps/`, and `tools/security-lane.sh`.
+  In v1.7.4 an unchanged release doc, README, contract surface or schemas
+  directory was invisible to diff-audit. It reported false HLT-025 findings and
+  false release-readiness, agent-docs and contract caps on pull requests whose
+  full audit was clean. diff-audit verdicts again match v1.6.11's.
+- Full-audit scoring does not change. On the 100-repository parity set the
+  v1.7.5 candidate's findings, scores, caps and decisions equal v1.7.4's.
 
 Public products are the Jankurai auditor, the Tuiwright CLI, and the UX QA npm CLI
 package. Each native tarball holds the binary, its license, the family lock, the

@@ -14,17 +14,17 @@
 # sentinel and checks nothing about the binary, because no committed file can
 # prove a hash the family has not measured yet.
 schema_version = "1.0.0"
-version = "1.7.4"
-release_tag = "v1.7.4"
+version = "1.7.5"
+release_tag = "v1.7.5"
 binary_sha256 = "pending"
-# While v1.7.4 is being cut, a member Action may keep defaulting to v1.7.3, the
+# While v1.7.5 is being cut, a member Action may keep defaulting to v1.7.4, the
 # release immediately before it, so consumers who take the default can install
 # a published release. scripts/auditor-pin.mjs accepts exactly this tag or
 # release_tag as an action.yml release-tag default; auditor_version is never
 # relaxed. The allowance restores the strict gate by itself: the tag must be the
 # release before the pin in CHANGELOG.md, it is refused once binary_sha256 is no
 # longer "pending", and validation fails after the expiry date until both lines
-# are removed. Remove them once v1.7.4 is published and every Action default has
+# are removed. Remove them once v1.7.5 is published and every Action default has
 # moved to it.
-previous_published_release_tag = "v1.7.3"
+previous_published_release_tag = "v1.7.4"
 previous_published_release_expires = "2026-11-14"
