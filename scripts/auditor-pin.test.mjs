@@ -21,8 +21,10 @@ const MIXED = {
 };
 const ACTION = tag => `name: "Jankurai"\n\ninputs:\n  release-tag:\n    description: "Jankurai release tag"\n    required: false\n    default: "${tag}"\n  mode:\n    required: false\n    default: "advisory"\n`;
 
+const CHANGELOG = '# Changelog\n\n## Unreleased\n\n## 1.7.3 - 2026-10-06\n\n## 1.7.2 - 2026-10-02\n\n## 1.7.1 - 2026-09-24\n';
+
 /** A family tree on disk: one hub plus a checkout per declared member. */
-function fixture({ pin, versions, actions = {} }, fn) {
+function fixture({ pin, versions, actions = {}, changelog = CHANGELOG }, fn) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'auditor-pin-')));
   try {
     const hubPath = path.join(root, 'jankurai');
@@ -34,6 +36,7 @@ function fixture({ pin, versions, actions = {} }, fn) {
       if (actions[name]) fs.writeFileSync(path.join(directory, 'action.yml'), ACTION(actions[name]));
     }
     fs.mkdirSync(path.join(hubPath, 'agent'), { recursive: true });
+    fs.writeFileSync(path.join(hubPath, 'CHANGELOG.md'), changelog);
     fs.writeFileSync(path.join(hubPath, 'agent/auditor-pin.toml'),
       Object.entries(pin).map(([key, value]) => `${key} = ${JSON.stringify(value)}`).join('\n'));
     const family = {
@@ -103,17 +106,19 @@ for (const [name, bad] of [
 // While the pinned release is being cut, an Action may keep defaulting to the
 // last published release so the default installs something; the pin must name
 // that release, and only it.
-const CUTTING = { ...PIN, version: '1.7.3', release_tag: 'v1.7.3', previous_published_release_tag: 'v1.7.2' };
+const CUTTING = { ...PIN, version: '1.7.3', release_tag: 'v1.7.3', previous_published_release_tag: 'v1.7.2', previous_published_release_expires: '2026-11-14' };
+const BEFORE_EXPIRY = { now: new Date('2026-11-14T23:59:59Z') };
+const AFTER_EXPIRY = { now: new Date('2026-11-15T00:00:00Z') };
 
 test('an Action default may be the previous published release the pin names', () => {
   fixture({ pin: CUTTING, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.3' }, actions: { jankurai: 'v1.7.3', 'jankurai-deploy': 'v1.7.2' } }, family => {
-    validateAuditorPin(family);
-    assert.deepEqual(acceptedActionDefaults(auditorPin(family.hub)), ['v1.7.3', 'v1.7.2']);
+    validateAuditorPin(family, BEFORE_EXPIRY);
+    assert.deepEqual(acceptedActionDefaults(auditorPin(family.hub, BEFORE_EXPIRY)), ['v1.7.3', 'v1.7.2']);
   });
 });
 
 test('without the pin naming it, the previous release is still a disagreement', () => {
-  const { previous_published_release_tag: _omitted, ...pin } = CUTTING;
+  const { previous_published_release_tag: _omitted, previous_published_release_expires: _alsoOmitted, ...pin } = CUTTING;
   fixture({ pin, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.3' }, actions: { 'jankurai-deploy': 'v1.7.2' } }, family => {
     assert.throws(() => validateAuditorPin(family), /jankurai-deploy: action\.yml release-tag default v1\.7\.2 != v1\.7\.3$/m);
   });
@@ -122,7 +127,7 @@ test('without the pin naming it, the previous release is still a disagreement', 
 test('any other Action default is refused even with a previous release named', () => {
   for (const tag of ['v1.7.1', 'v1.7.4', 'v1.7.3-rc1', 'latest']) {
     fixture({ pin: CUTTING, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.3' }, actions: { 'jankurai-deploy': tag } }, family => {
-      assert.throws(() => validateAuditorPin(family),
+      assert.throws(() => validateAuditorPin(family, BEFORE_EXPIRY),
         new RegExp(`jankurai-deploy: action\\.yml release-tag default ${tag.replaceAll('.', '\\.')} != v1\\.7\\.3 or v1\\.7\\.2`), tag);
     });
   }
@@ -130,7 +135,24 @@ test('any other Action default is refused even with a previous release named', (
 
 test('the allowance never relaxes auditor_version', () => {
   fixture({ pin: CUTTING, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.2' } }, family => {
-    assert.throws(() => validateAuditorPin(family), /jankurai-deploy: agent\/standard-version\.toml auditor_version 1\.7\.2 != 1\.7\.3/);
+    assert.throws(() => validateAuditorPin(family, BEFORE_EXPIRY), /jankurai-deploy: agent\/standard-version\.toml auditor_version 1\.7\.2 != 1\.7\.3/);
+  });
+});
+
+// The allowance restores the strict gate by itself: it names only the release
+// right before the pin, lapses once the pinned release is cut, and expires.
+const DEPLOY_ON_PREVIOUS = { versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.3' }, actions: { 'jankurai-deploy': 'v1.7.2' } };
+for (const [name, pin, message, options = BEFORE_EXPIRY, changelog] of [
+  ['an older release than the one right before the pin', { ...CUTTING, previous_published_release_tag: 'v1.7.1' }, /v1\.7\.1 must be the release immediately before v1\.7\.3 in CHANGELOG\.md \(v1\.7\.2\)/],
+  ['a pin with no earlier release in CHANGELOG.md', CUTTING, /must be the release immediately before v1\.7\.3 in CHANGELOG\.md \(none found\)/, BEFORE_EXPIRY, '# Changelog\n\n## 1.7.3 - 2026-10-06\n'],
+  ['a pinned release that is already cut', { ...CUTTING, binary_sha256: 'a'.repeat(64) }, /allowed only while binary_sha256 is "pending"/],
+  ['no expiry date', (({ previous_published_release_expires: _omitted, ...pin }) => pin)(CUTTING), /needs previous_published_release_expires/],
+  ['an expiry that is not a date', { ...CUTTING, previous_published_release_expires: 'soon' }, /needs previous_published_release_expires/],
+  ['an expired allowance', CUTTING, /allowance expired on 2026-11-14/, AFTER_EXPIRY],
+  ['an expiry date without the tag', (({ previous_published_release_tag: _omitted, ...pin }) => pin)(CUTTING), /previous_published_release_expires without previous_published_release_tag/],
+]) test(`the Action-default allowance is refused: ${name}`, () => {
+  fixture({ ...DEPLOY_ON_PREVIOUS, pin, ...(changelog ? { changelog } : {}) }, family => {
+    assert.throws(() => validateAuditorPin(family, options), message);
   });
 });
 

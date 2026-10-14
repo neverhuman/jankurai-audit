@@ -34,11 +34,15 @@ disagrees, when a member checkout declares a different `auditor_version` in
 `bash scripts/validate-family.sh --checkouts` for the whole family.
 
 One narrow allowance: while the pinned release is being cut and is not yet
-published, the pin may name `previous_published_release_tag` (an earlier
-`vX.Y.Z`). An `action.yml` `release-tag` default may then be that tag, so
-consumers who take the default can still install a published release. No other
-default is accepted, and `auditor_version` is never relaxed. Remove the field
-once the pinned release is published and the Action defaults have moved to it.
+published, the pin may name `previous_published_release_tag`, the release
+immediately before the pin in the hub `CHANGELOG.md`. An `action.yml`
+`release-tag` default may then be that tag, so consumers who take the default
+can still install a published release. No other default is accepted, and
+`auditor_version` is never relaxed. The allowance ends by itself: it is refused
+once `binary_sha256` is no longer `"pending"`, and it needs
+`previous_published_release_expires` (a date), after which `validate-family`
+fails until both fields are removed. Remove them once the pinned release is
+published and the Action defaults have moved to it.
 
 Moving the pin is a release decision, and it does not change any live score by
 itself: a person still has to re-cut and re-install the governed scorer the
