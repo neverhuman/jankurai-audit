@@ -30,6 +30,12 @@ release metadata for the forge-only CI the family now runs.
   code). The 1.7.4 auditor does not consume it yet, so tool-adoption scoring is
   unchanged.
 - The installer and Action default to `v1.7.4`.
+- `family.lock` pins every member at its 1.7.4 revision: core `d13ca0d`,
+  kernel `bc13c32`, analyzers `fd6f120`, proof `192854d`, Tuiwright `5e3222b`,
+  UX `b72a897`, deploy `1290049`, and contracts, standard, conformance, paper,
+  guard, dedup and fleet at the commits that declare the 1.7.4 auditor pin.
+  Core pins the same kernel, analyzers and proof revisions. The fused
+  `Cargo.lock` changes only the jankurai and tuiwright versions.
 - Not in the `jankurai` binary: the governed launcher in jankurai-tools-proof
   reads its site paths from the root-owned
   `/etc/jankurai/governed-launcher.json` instead of compiled-in paths, and
