@@ -73,5 +73,5 @@ commit = "cd152f0580e701dbd7bc5c795a329d8d48debb40"
 
 [[repo]]
 repo = "jankurai-deploy"
-tag = "ci-fd138d87c18f2479422ba7808c65bdfc545e3fc0"
-commit = "fd138d87c18f2479422ba7808c65bdfc545e3fc0"
+tag = "ci-ce581850312ce5385e84d7f4474ae3b7e39c04d0"
+commit = "ce581850312ce5385e84d7f4474ae3b7e39c04d0"

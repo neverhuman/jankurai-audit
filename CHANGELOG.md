@@ -37,9 +37,15 @@ block.
   lock's `release_signer_sha256` must be the SHA-256 of the hub's key. A member's
   own lane can only prove its files agree with each other; on a composed
   family checkout this proves they are the hub's.
+- `agent/auditor-pin.toml` may name `previous_published_release_tag`
+  (`v1.7.2`) while `v1.7.3` is being cut: a member Action's `release-tag`
+  default may be that tag or the pinned `release_tag`, nothing else, so
+  consumers who take the default can install a published release.
+  `auditor_version` is never relaxed. The field is removed once `v1.7.3` is
+  published and the Action defaults have moved to it.
 - `family.lock` pins every member at its 1.7.3 revision: core `81ba175`,
   kernel `cfa36a7`, analyzers `0c22b6d`, proof `281bf4c`, Tuiwright `1456eb4`,
-  UX `f609341`, deploy `fd138d8`, and contracts, standard, conformance, paper,
+  UX `f609341`, deploy `ce58185`, and contracts, standard, conformance, paper,
   guard, dedup and fleet at the commits that declare the 1.7.3 auditor pin.
   Core pins the same kernel, analyzers and proof revisions. The fused
   `Cargo.lock` changes only the jankurai and tuiwright versions.
