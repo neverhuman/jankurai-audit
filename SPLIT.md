@@ -32,6 +32,10 @@ disagrees, when a member checkout declares a different `auditor_version` in
 `agent/standard-version.toml` or a different `release-tag` default in its
 `action.yml`. Members are only checked when their checkout is present, so run
 `bash scripts/validate-family.sh --checkouts` for the whole family.
+Before a release is tagged, add `--pins-on-main`: every `family.lock` pin must
+then also be reachable from its member's `origin/main` in that checkout (fetch
+it first), so a pin to an unmerged branch tip fails even when its `ci-<sha>` tag
+exists.
 
 One narrow allowance: while the pinned release is being cut and is not yet
 published, the pin may name `previous_published_release_tag`, the release

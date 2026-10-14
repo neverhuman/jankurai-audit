@@ -6,6 +6,7 @@ import { clean, exists, gitText, readToml } from './family-lib.mjs';
 import { validateAuditorPin } from './auditor-pin.mjs';
 import { validateVendoredTrust } from './vendored-trust.mjs';
 import { reportGateContract } from './gate-contract.mjs';
+import { pinsOffMain } from './pins-on-main.mjs';
 
 function validateDependencies(file, root) {
   const queue = [readToml(file)];
@@ -58,6 +59,12 @@ try {
       clean(directory);
       if (gitText(directory, 'rev-parse', 'HEAD') !== pin.commit || gitText(directory, 'rev-parse', `refs/tags/${pin.tag}^{commit}`) !== pin.commit) throw new Error(`${repo.name}: checkout/tag differs from lock`);
     }
+  }
+  // Opt-in: every pin must also be merged on its member's main (see pins-on-main.mjs).
+  if (process.argv.includes('--pins-on-main')) {
+    if (!checkouts) throw new Error('--pins-on-main needs --checkouts');
+    const off = pinsOffMain(family);
+    if (off.length) throw new Error(`${off.length} pin(s) not on main:\n  ${off.map(({ repo, detail }) => `${repo}: ${detail}`).join('\n  ')}`);
   }
   if (gateContract) {
     const violations = reportGateContract(family, { blocking: blockingGate });

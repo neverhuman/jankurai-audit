@@ -30,6 +30,11 @@ release metadata for the forge-only CI the family now runs.
   code). The 1.7.4 auditor does not consume it yet, so tool-adoption scoring is
   unchanged.
 - The installer and Action default to `v1.7.4`.
+- `validate-family --checkouts --pins-on-main` also requires every
+  `family.lock` pin to be reachable from its member's `origin/main`
+  (`scripts/pins-on-main.mjs`). `--checkouts` alone proves only that each
+  checkout and `ci-<sha>` tag match the lock, which an unmerged branch tip also
+  satisfies.
 - `family.lock` pins every member at its 1.7.4 revision: core `d13ca0d`,
   kernel `bc13c32`, analyzers `fd6f120`, proof `192854d`, Tuiwright `5e3222b`,
   UX `b72a897`, deploy `0911baf`, and contracts, standard, conformance, paper,
