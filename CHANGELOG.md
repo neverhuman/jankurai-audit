@@ -33,6 +33,12 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
   `v1.7.5` is cut. The expiry stays `2026-11-14`.
 - The installer and Action default to `v1.7.5`.
 - Full-audit scoring is unchanged from 1.7.4.
+- `family.lock` pins every member at its 1.7.5 revision: core `02d355d`,
+  kernel `0291fc3`, analyzers `1eacd85`, proof `c861123`, Tuiwright `21c356d`,
+  UX `4073df5`, deploy `2abde2c`, and contracts, standard, conformance, paper,
+  guard, dedup and fleet at the commits that declare the 1.7.5 auditor pin.
+  Core pins the same kernel, analyzers and proof revisions. The fused
+  `Cargo.lock` changes only the jankurai and tuiwright versions.
 
 ## 1.7.4 - 2026-10-14
 
