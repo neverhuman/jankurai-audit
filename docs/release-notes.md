@@ -1,20 +1,18 @@
-Jankurai v1.7.3 brings the public auditor in line with the provider-aware CI
-crediting of the governed build. It is built on our own build hosts and signed
-with the Jankurai release key, as v1.7.2 was. GitHub is only where releases are
+Jankurai v1.7.4 keeps the v1.7.3 scoring and adds reviewed dead-language
+allowances. It is built on our own build hosts and signed with the Jankurai
+release key, as v1.7.2 and v1.7.3 were. GitHub is only where releases are
 published.
 
-Scoring changes from v1.7.2:
+Changes from v1.7.3:
 
-- A repository gated by the jeryu forge earns proof CI presence, the speed CI
-  cache hint and the security workflow-lint check from the resolved lane its
-  `.jeryu/ci.toml` declares, as a GitHub workflow does. The declaration alone
-  still earns nothing. Workflow linting is not applicable without workflow files.
-- `npm test`, `npm run <script>`, `pnpm run <script>` and `yarn <script>` lanes
-  resolve through package.json scripts.
-- A declared lane that resolves to no repository content is reported as a soft
-  finding at `.jeryu/ci.toml`.
-- HLT-031 no longer reads prose `as` in comments, string literals or import
-  aliases as a TypeScript boundary cast.
+- HLT-001 dead-language hits can be covered by reviewed `[[dead_language_allow]]`
+  records in `agent/audit-policy.toml`. Each record names its terms, the paths
+  it covers, an owner, a reason and an expiry date. A covered hit is not a
+  finding and does not cap the score. An expired or incomplete record covers
+  nothing and the hit counts again. The legacy `[dead_language] allow_terms`
+  table is still read.
+- Nothing else in scoring changes. On the 100-repository parity set the
+  v1.7.4 candidate's findings, scores, caps and decisions equal v1.7.3's.
 
 Public products are the Jankurai auditor, the Tuiwright CLI, and the UX QA npm CLI
 package. Each native tarball holds the binary, its license, the family lock, the

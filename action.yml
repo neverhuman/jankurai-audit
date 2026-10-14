@@ -9,7 +9,7 @@ inputs:
   release-tag:
     description: "Jankurai release tag to install from neverhuman/jankurai-audit releases"
     required: false
-    default: "v1.7.3"
+    default: "v1.7.4"
   mode:
     description: "Audit mode: standard (blocking), advisory, ratchet, or release"
     required: false

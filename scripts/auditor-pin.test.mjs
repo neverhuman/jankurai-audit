@@ -158,6 +158,6 @@ for (const [name, pin, message, options = BEFORE_EXPIRY, changelog] of [
 
 test('the hub declares a pin it holds itself', () => {
   const pin = auditorPin(hub);
-  assert.equal(pin.version, '1.7.3');
+  assert.equal(pin.version, '1.7.4');
   assert.deepEqual(auditorDisagreements({ hub, repos: [{ name: 'jankurai', path: 'jankurai' }], path: () => hub, existing: () => true }, pin), []);
 });

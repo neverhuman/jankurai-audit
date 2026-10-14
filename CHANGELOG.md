@@ -6,6 +6,36 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
 
 ## Unreleased
 
+## 1.7.4 - 2026-10-14
+
+1.7.4 is 1.7.3 plus the kernel's reviewed dead-language allowances and the
+release metadata for the forge-only CI the family now runs.
+
+### Changed
+
+- Public release is `1.7.4`. `jankurai`, `tuiwright`, and `@jankurai/ux-qa`
+  report that version. Standard `0.9.0` and schema `1.9.0` are unchanged.
+- `agent/auditor-pin.toml` pins `1.7.4` (`v1.7.4`), and every member declares
+  it. `binary_sha256` stays `"pending"`: the governed build of 1.7.4 is not cut.
+- `previous_published_release_tag` is `v1.7.3`, the release right before the
+  pin, so the deploy Action may keep defaulting to the published `v1.7.3` while
+  `v1.7.4` is cut. The expiry stays `2026-11-14`.
+- HLT-001 dead-language hits can be covered by reviewed, owned, expiring
+  `[[dead_language_allow]]` records in `agent/audit-policy.toml`, scoped to
+  paths. A covered hit is not a finding and does not cap the score; an expired
+  or incomplete record covers nothing. The legacy
+  `[dead_language] allow_terms` table is still read.
+- The kernel carries an opt-in docs-only exemption for three product-measuring
+  tool-adoption entries (`target_stack = "docs"` with no authored product
+  code). The 1.7.4 auditor does not consume it yet, so tool-adoption scoring is
+  unchanged.
+- The installer and Action default to `v1.7.4`.
+- Not in the `jankurai` binary: the governed launcher in jankurai-tools-proof
+  reads its site paths from the root-owned
+  `/etc/jankurai/governed-launcher.json` instead of compiled-in paths, and
+  jankurai-core's forge `required` lane runs its full quality gate in place of
+  the removed GitHub workflow.
+
 ## 1.7.3 - 2026-10-06
 
 1.7.3 carries the governed split.6 scoring (`jeryu/jankurai`

@@ -13,7 +13,7 @@ Public hub, installer, GitHub Action, family manifest, lock, and local fusion.
 
 - Historical Jeryu repo: `root/jankurai`
 - Primary GitHub repository: `neverhuman/jankurai`
-- Release tag pattern: `v1.7.3`
+- Release tag pattern: `v1.7.4`
 - Source extraction commit: `cea83b0cbe204be276a2f0299cd760f6812ea2b0`
 
 ## Split Rules

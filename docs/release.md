@@ -3,7 +3,7 @@
 Releases are built and signed on our own build hosts and published to GitHub,
 which is only the publishing mirror. Nothing runs on GitHub Actions. `VERSION`,
 the auditor version, the Tuiwright version and the UX npm package version must
-agree. The current release is `v1.7.3`. `v1.7.2` was the first key-signed release.
+agree. The current release is `v1.7.4`. `v1.7.2` was the first key-signed release.
 
 | Tags | Built by | Signed with | The installer verifies |
 | --- | --- | --- | --- |
@@ -37,7 +37,7 @@ The tag must already exist on the forge and on the GitHub mirror. Tags are
 immutable. Never move one.
 
 ```sh
-tag=v1.7.3
+tag=v1.7.4
 git fetch origin --tags
 # 1. Build (Linux x86-64). A neutral build root keeps home paths out of the binary.
 #    The compile runs in the digest-pinned Debian 12 image of ops/release/builder
@@ -191,8 +191,8 @@ coverage is refused.
 ## Installation
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.3/jankurai-installer.sh | bash -s -- --tag v1.7.3'
-bash jankurai-installer.sh --tag v1.7.3 --product tuiwright
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.4/jankurai-installer.sh | bash -s -- --tag v1.7.4'
+bash jankurai-installer.sh --tag v1.7.4 --product tuiwright
 ```
 
 The installer downloads temporary cosign and jq binaries at exact versions and

@@ -3,7 +3,7 @@
 ## Supported Versions
 
 Security fixes target `main` and the latest published release, currently
-[v1.7.3](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.3). Older
+[v1.7.4](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.4). Older
 snapshots are supported only when maintainers explicitly mark them in release notes.
 
 ## Private Reporting
