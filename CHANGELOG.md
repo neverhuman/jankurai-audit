@@ -39,6 +39,10 @@ Jankurai is 1.0. Public CLI behavior, report schemas, generated scaffold paths, 
   guard, dedup and fleet at the commits that declare the 1.7.5 auditor pin.
   Core pins the same kernel, analyzers and proof revisions. The fused
   `Cargo.lock` changes only the jankurai and tuiwright versions.
+  Deploy `1b57617` is deploy `main` after its #12: `2abde2c` (the installer
+  re-sync, `published_release` 1.7.4 and the Action default `v1.7.4`) plus a
+  docs-only reflow of one paragraph in `docs/install.md`. Its vendored
+  installer and release key are the hub's at `b4ce1a3`.
 
 ## 1.7.4 - 2026-10-14
 
