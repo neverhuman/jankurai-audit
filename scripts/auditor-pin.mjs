@@ -20,7 +20,29 @@ export function auditorPin(hub) {
   // The governed build is cut by a person, so "pending" records a hash the
   // family has not measured yet; no committed file can stand in for it.
   if (pin.binary_sha256 !== 'pending' && !/^[a-f0-9]{64}$/.test(pin.binary_sha256 ?? '')) throw new Error(`${AUDITOR_PIN}: binary_sha256 must be 64 hex characters or "pending"`);
+  // An Action may default to the last release that is actually published while
+  // the pinned one is being cut, so consumers who take the default can install
+  // something. The pin names that release explicitly; nothing else is accepted.
+  if (pin.previous_published_release_tag !== undefined) {
+    const previous = pin.previous_published_release_tag;
+    const match = typeof previous === 'string' && previous.match(/^v(\d+)\.(\d+)\.(\d+)$/);
+    if (!match) throw new Error(`${AUDITOR_PIN}: previous_published_release_tag must be a release tag vX.Y.Z (no pre-release)`);
+    if (compareCore(match.slice(1, 4).map(Number), coreOf(pin.version)) >= 0) {
+      throw new Error(`${AUDITOR_PIN}: previous_published_release_tag ${previous} must be an earlier release than ${pin.release_tag}`);
+    }
+  }
   return pin;
+}
+
+function coreOf(version) { return version.split(/[-+]/)[0].split('.').map(Number); }
+function compareCore(a, b) { for (let i = 0; i < 3; i += 1) if (a[i] !== b[i]) return a[i] - b[i]; return 0; }
+
+/**
+ * The release-tag defaults an Action may carry: the pinned release, or the
+ * immediately previous published release when the pin names one.
+ */
+export function acceptedActionDefaults(pin) {
+  return pin.previous_published_release_tag ? [pin.release_tag, pin.previous_published_release_tag] : [pin.release_tag];
 }
 
 /** The `release-tag` input default of an action.yml, or null when it has none. */
@@ -43,7 +65,10 @@ export function auditorDisagreements(family, pin) {
     const action = path.join(directory, 'action.yml');
     if (exists(action)) {
       const tag = releaseTagDefault(action);
-      if (tag !== null && tag !== pin.release_tag) disagreements.push({ repo: repo.name, detail: `action.yml release-tag default ${tag} != ${pin.release_tag}` });
+      const accepted = acceptedActionDefaults(pin);
+      if (tag !== null && !accepted.includes(tag)) {
+        disagreements.push({ repo: repo.name, detail: `action.yml release-tag default ${tag} != ${accepted.join(' or ')}${accepted.length > 1 ? ' (the pinned release or the previous published release named in the pin)' : ''}` });
+      }
     }
   }
   return disagreements;

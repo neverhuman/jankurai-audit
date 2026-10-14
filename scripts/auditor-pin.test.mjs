@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { auditorPin, auditorDisagreements, validateAuditorPin } from './auditor-pin.mjs';
+import { acceptedActionDefaults, auditorPin, auditorDisagreements, validateAuditorPin } from './auditor-pin.mjs';
 
 const hub = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -90,9 +90,47 @@ for (const [name, bad] of [
   ['a non-semver version', { ...PIN, version: 'latest' }],
   ['a release tag that is not the pinned version', { ...PIN, release_tag: 'v1.7.0-split.0' }],
   ['a binary hash that is neither hex nor pending', { ...PIN, binary_sha256: 'soon' }],
+  ['a previous published release that is the pinned release', { ...PIN, previous_published_release_tag: 'v1.7.2' }],
+  ['a previous published release later than the pin', { ...PIN, previous_published_release_tag: 'v1.7.3' }],
+  ['a previous published release that is a pre-release', { ...PIN, previous_published_release_tag: 'v1.7.1-rc1' }],
+  ['a previous published release that is not a tag', { ...PIN, previous_published_release_tag: '1.7.1' }],
 ]) test(`the pin itself is rejected: ${name}`, () => {
   fixture({ pin: bad, versions: { jankurai: '1.7.2' } }, family => {
     assert.throws(() => validateAuditorPin(family), /agent\/auditor-pin\.toml:/);
+  });
+});
+
+// While the pinned release is being cut, an Action may keep defaulting to the
+// last published release so the default installs something; the pin must name
+// that release, and only it.
+const CUTTING = { ...PIN, version: '1.7.3', release_tag: 'v1.7.3', previous_published_release_tag: 'v1.7.2' };
+
+test('an Action default may be the previous published release the pin names', () => {
+  fixture({ pin: CUTTING, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.3' }, actions: { jankurai: 'v1.7.3', 'jankurai-deploy': 'v1.7.2' } }, family => {
+    validateAuditorPin(family);
+    assert.deepEqual(acceptedActionDefaults(auditorPin(family.hub)), ['v1.7.3', 'v1.7.2']);
+  });
+});
+
+test('without the pin naming it, the previous release is still a disagreement', () => {
+  const { previous_published_release_tag: _omitted, ...pin } = CUTTING;
+  fixture({ pin, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.3' }, actions: { 'jankurai-deploy': 'v1.7.2' } }, family => {
+    assert.throws(() => validateAuditorPin(family), /jankurai-deploy: action\.yml release-tag default v1\.7\.2 != v1\.7\.3$/m);
+  });
+});
+
+test('any other Action default is refused even with a previous release named', () => {
+  for (const tag of ['v1.7.1', 'v1.7.4', 'v1.7.3-rc1', 'latest']) {
+    fixture({ pin: CUTTING, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.3' }, actions: { 'jankurai-deploy': tag } }, family => {
+      assert.throws(() => validateAuditorPin(family),
+        new RegExp(`jankurai-deploy: action\\.yml release-tag default ${tag.replaceAll('.', '\\.')} != v1\\.7\\.3 or v1\\.7\\.2`), tag);
+    });
+  }
+});
+
+test('the allowance never relaxes auditor_version', () => {
+  fixture({ pin: CUTTING, versions: { jankurai: '1.7.3', 'jankurai-deploy': '1.7.2' } }, family => {
+    assert.throws(() => validateAuditorPin(family), /jankurai-deploy: agent\/standard-version\.toml auditor_version 1\.7\.2 != 1\.7\.3/);
   });
 });
 

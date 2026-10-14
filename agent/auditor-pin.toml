@@ -17,3 +17,10 @@ schema_version = "1.0.0"
 version = "1.7.3"
 release_tag = "v1.7.3"
 binary_sha256 = "pending"
+# While v1.7.3 is being cut, a member Action may keep defaulting to the last
+# published release so consumers who take the default can install it.
+# scripts/auditor-pin.mjs accepts exactly this tag or release_tag as an
+# action.yml release-tag default, and requires it to be an earlier release.
+# auditor_version is never relaxed. Remove this line once v1.7.3 is published
+# and every Action default has moved to it.
+previous_published_release_tag = "v1.7.2"

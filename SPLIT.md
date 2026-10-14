@@ -33,6 +33,13 @@ disagrees, when a member checkout declares a different `auditor_version` in
 `action.yml`. Members are only checked when their checkout is present, so run
 `bash scripts/validate-family.sh --checkouts` for the whole family.
 
+One narrow allowance: while the pinned release is being cut and is not yet
+published, the pin may name `previous_published_release_tag` (an earlier
+`vX.Y.Z`). An `action.yml` `release-tag` default may then be that tag, so
+consumers who take the default can still install a published release. No other
+default is accepted, and `auditor_version` is never relaxed. Remove the field
+once the pinned release is published and the Action defaults have moved to it.
+
 Moving the pin is a release decision, and it does not change any live score by
 itself: a person still has to re-cut and re-install the governed scorer the
 forge runs (`jeryu/jankurai`), then record its `binary_sha256` in the pin file.
