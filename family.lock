@@ -2,7 +2,7 @@ schema_version = "1.0.0"
 family = "jankurai"
 release = "1.7.5"
 source = "repos.manifest.toml"
-generated_at = "2026-10-14T17:00:45Z"
+generated_at = "2026-10-14T17:34:04Z"
 source_repo = "root/jankurai"
 source_commit = "cea83b0cbe204be276a2f0299cd760f6812ea2b0"
 
@@ -73,5 +73,5 @@ commit = "a3689178df6c32380e6c41a927af58086876cf2c"
 
 [[repo]]
 repo = "jankurai-deploy"
-tag = "ci-2abde2c65e2de5c061c52ab0975a2f2d507fe0db"
-commit = "2abde2c65e2de5c061c52ab0975a2f2d507fe0db"
+tag = "ci-1b57617aede25b7f0552f1213f16935b5e37bbb0"
+commit = "1b57617aede25b7f0552f1213f16935b5e37bbb0"
