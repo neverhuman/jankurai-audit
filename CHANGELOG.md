@@ -6,28 +6,44 @@ This file is written when a release is cut: its notes are generated from the com
 
 ## 1.7.6 - 2026-10-29
 
-Source candidate; signing, publication and governed installation remain pending.
-The published 1.7.5 assets remain immutable.
+- fix: restore hub audit and executable proof routes
+Todo: 20261029-020843-a168bb
 
-### Fixed
+- fix: validate hub worktrees and locked family Git objects
+Todo: 20261029-015933-0f3e4d
 
-- Include the merged core init surface flags, full-level cell guidance, green
-  score-level check recipe and rejection of unknown IDE tokens (core #14).
-- Preserve unchanged CI declarations in diff-audit's proof inventory (core #19),
-  so documentation-only changes retain real proof evidence. Existing full audit
-  scoring and score floors are unchanged.
-- Include the family members' required CI enrollment and independent review
-  protection, plus their accepted source fixes recorded by `family.lock`.
+- fix: isolate hub fast validation from ambient runner siblings
+Todo: 20261029-015933-0f3e4d
 
-### Changed
+- docs: stop per-change changelog guidance
+Todo: 20261013-124854-891cb0
 
-- Auditor, Tuiwright and UX product versions, the family pin and member auditor
-  metadata align to 1.7.6. Standard and schema versions stay unchanged.
-- Installer and Action defaults remain on published v1.7.5 with the bounded
-  previous-release allowance ending 2026-11-14. Install 1.7.6 explicitly after
-  publication; deploy's vendored installer and release key remain byte-identical.
-- `binary_sha256` remains `pending` until the release binary is built and
-  measured. Source pins do not promote a live governed scorer.
+- docs: give release preparers an executable notes command
+Todo: 20261013-124854-891cb0
+
+- fix: build releases in a managed source worktree
+Todo: 20261029-053320-9ccfba
+
+- build: include the accepted diff-audit repair in release sources
+Todo: 20261029-220132-b3e662
+
+- release: prepare hub 1.7.6 metadata pending member composition
+Todo: 20261029-021147-cffb6c
+
+- Compose the migrated kernel source into the 1.7.6 family workspace
+Todo: 20261029-021147-cffb6c
+
+- release: compose accepted 1.7.6 member versions
+Todo: 20261029-021147-cffb6c
+
+- release: regenerate fused native lock for 1.7.6
+Todo: 20261029-021147-cffb6c
+
+- release: normalize build paths inside the Linux container
+Todo: 20261029-053320-9ccfba
+
+- release: use the accepted dedup and fleet kernel migrations
+Todo: 20261029-021147-cffb6c
 
 ## 1.7.5 - 2026-10-14
 
