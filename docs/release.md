@@ -3,7 +3,8 @@
 Releases are built and signed on our own build hosts and published to GitHub,
 which is only the publishing mirror. Nothing runs on GitHub Actions. `VERSION`,
 the auditor version, the Tuiwright version and the UX npm package version must
-agree. The current release is `v1.7.5`. `v1.7.2` was the first key-signed release.
+agree. The source release candidate is `v1.7.6`; the latest published release is
+`v1.7.5` until the owner completes signing and publication. `v1.7.2` was the first key-signed release.
 
 | Tags | Built by | Signed with | The installer verifies |
 | --- | --- | --- | --- |
@@ -57,12 +58,18 @@ command above is the generation step; the build and publisher do not run it.
 
 ### Every release
 
+For the 1.7.6 candidate, the installer and Action defaults remain on published
+`v1.7.5`, matching deploy's verified vendored installer. Use `--tag v1.7.6`
+explicitly for staged verification and installation after publication. The
+bounded Action allowance expires on 2026-11-14; publishing alone does not
+change any host's governed auditor.
+
 The tag must already exist on the forge and on the GitHub mirror. Tags are
 immutable. Never move one.
 The release preparation PR above must already have landed before the tag is cut.
 
 ```sh
-tag=v1.7.5
+tag=v1.7.6
 git fetch origin --tags
 # 1. Build (Linux x86-64) in one registered host-managed source worktree.
 #    The compile runs in the digest-pinned Debian 12 image of ops/release/builder

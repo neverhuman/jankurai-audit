@@ -4,6 +4,31 @@ This file is written when a release is cut: its notes are generated from the com
 
 ## Unreleased
 
+## 1.7.6 - 2026-10-29
+
+Source candidate; signing, publication and governed installation remain pending.
+The published 1.7.5 assets remain immutable.
+
+### Fixed
+
+- Include the merged core init surface flags, full-level cell guidance, green
+  score-level check recipe and rejection of unknown IDE tokens (core #14).
+- Preserve unchanged CI declarations in diff-audit's proof inventory (core #19),
+  so documentation-only changes retain real proof evidence. Existing full audit
+  scoring and score floors are unchanged.
+- Include the family members' required CI enrollment and independent review
+  protection, plus their accepted source fixes recorded by `family.lock`.
+
+### Changed
+
+- Auditor, Tuiwright and UX product versions, the family pin and member auditor
+  metadata align to 1.7.6. Standard and schema versions stay unchanged.
+- Installer and Action defaults remain on published v1.7.5 with the bounded
+  previous-release allowance ending 2026-11-14. Install 1.7.6 explicitly after
+  publication; deploy's vendored installer and release key remain byte-identical.
+- `binary_sha256` remains `pending` until the release binary is built and
+  measured. Source pins do not promote a live governed scorer.
+
 ## 1.7.5 - 2026-10-14
 
 1.7.5 is 1.7.4 plus the changed-fast `diff-audit` fix.
