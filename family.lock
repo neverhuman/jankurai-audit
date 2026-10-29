@@ -8,8 +8,8 @@ source_commit = "cea83b0cbe204be276a2f0299cd760f6812ea2b0"
 
 [[repo]]
 repo = "jankurai-core"
-tag = "ci-02d355db189738bf8a2ef94cd87ce2971d2ea605"
-commit = "02d355db189738bf8a2ef94cd87ce2971d2ea605"
+tag = "ci-717bf9009e155e0d7fa39ff828804e0dc7dc9887"
+commit = "717bf9009e155e0d7fa39ff828804e0dc7dc9887"
 
 [[repo]]
 repo = "jankurai-contracts"
