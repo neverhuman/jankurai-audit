@@ -42,6 +42,8 @@ function upstream(fn) {
     fs.writeFileSync(path.join(src, 'VERSION'), '2\n');
     git(src, 'commit', '-q', '-am', 'draft');
     const draft = git(src, 'rev-parse', 'HEAD');
+    git(src, 'tag', `ci-${merged}`, merged);
+    git(src, 'tag', `ci-${draft}`, draft);
     git(src, 'checkout', '-q', 'main');
     git(src, 'config', 'uploadpack.allowAnySHA1InWant', 'true');
     git(src, 'config', 'uploadpack.allowFilter', 'true');
@@ -53,9 +55,10 @@ test('a member composes at its pin with its tag and origin/main', () => {
   upstream(({ root, url, merged }) => {
     const dir = path.join(root, 'member');
     composeMember(dir, { url, branch: 'main', tag: `ci-${merged}`, commit: merged });
-    assert.equal(git(dir, 'rev-parse', 'HEAD'), merged);
+    assert.equal(git(dir, 'rev-parse', '--is-bare-repository'), 'true');
     assert.equal(git(dir, 'rev-parse', `refs/tags/ci-${merged}^{commit}`), merged);
-    assert.equal(fs.readFileSync(path.join(dir, 'VERSION'), 'utf8'), '1\n');
+    assert.equal(git(dir, 'show', `${merged}:VERSION`), '1');
+    assert.equal(fs.existsSync(path.join(dir, 'VERSION')), false);
     assert.equal(pinOnMainProblem(dir, merged), null);
   });
 });
@@ -64,7 +67,7 @@ test('a pin off main still composes, so validate-family can refuse it by name', 
   upstream(({ root, url, draft }) => {
     const dir = path.join(root, 'member');
     composeMember(dir, { url, branch: 'main', tag: `ci-${draft}`, commit: draft });
-    assert.equal(git(dir, 'rev-parse', 'HEAD'), draft);
+    assert.equal(git(dir, 'rev-parse', `refs/tags/ci-${draft}^{commit}`), draft);
     assert.match(pinOnMainProblem(dir, draft), /is not on origin\/main/);
   });
 });
@@ -72,5 +75,19 @@ test('a pin off main still composes, so validate-family can refuse it by name', 
 test('a pin the forge does not hold fails the composition', () => {
   upstream(({ root, url }) => {
     assert.throws(() => composeMember(path.join(root, 'member'), { url, branch: 'main', tag: 'ci-x', commit: 'f'.repeat(40) }), /git fetch/);
+  });
+});
+
+test('a real tag that differs from the lock fails instead of being manufactured', () => {
+  upstream(({ root, url, merged, draft }) => {
+    assert.throws(() => composeMember(path.join(root, 'member'), { url, branch: 'main', tag: `ci-${merged}`, commit: draft }), /immutable tag.*expected/);
+  });
+});
+test('existing evidence is retained and refused', () => {
+  upstream(({ root, url, merged }) => {
+    const directory = path.join(root, 'evidence'); fs.mkdirSync(directory);
+    fs.writeFileSync(path.join(directory, 'receipt'), 'keep');
+    assert.throws(() => composeMember(directory, { url, branch: 'main', tag: `ci-${merged}`, commit: merged }), /refusing to replace/);
+    assert.equal(fs.readFileSync(path.join(directory, 'receipt'), 'utf8'), 'keep');
   });
 });

@@ -277,3 +277,27 @@ test('pre-rename crate sources route to member mirrors and never capture the hub
     ['https://www.github.com/neverhuman/jankurai-core.git', 'https://github.com/neverhuman/jankurai-audit-core.git'],
   ]);
 });
+
+test('registered host hub worktree validates without accepting a copied gitfile', t => {
+  const { hub } = fixture(t);
+  git(hub, ['add', '.']); git(hub, ['commit', '-qm', 'family metadata']);
+  const lane = path.join(hub, '.agent/worktrees/check');
+  git(hub, ['worktree', 'add', '--detach', lane, 'HEAD']);
+  try {
+    const linked = new Family(lane);
+    assert.equal(linked.existing(linked.repos[0]), true);
+    const fake = path.join(hub, '.agent/worktrees/copied'); fs.mkdirSync(fake);
+    fs.copyFileSync(path.join(lane, '.git'), path.join(fake, '.git'));
+    linked.path = () => fake;
+    assert.throws(() => linked.existing(linked.repos[0]), /canonical primary checkout or registered host worktree/);
+  } finally { git(hub, ['worktree', 'remove', lane]); }
+});
+test('registered worktrees outside their repository host lanes are refused', t => {
+  const { root, hub, family } = fixture(t);
+  const lane = path.join(root, 'foreign-lane');
+  git(hub, ['worktree', 'add', '--detach', lane, 'HEAD']);
+  try {
+    family.path = () => lane;
+    assert.throws(() => family.existing(family.repos[0]), /canonical primary checkout or registered host worktree/);
+  } finally { git(hub, ['worktree', 'remove', lane]); }
+});

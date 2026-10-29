@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { validateCheckout } from './family-worktree.mjs';
 import { readToml, exists, isLink, gitText, git, clean, atomicWrite, run, buildEnvironment } from './family-lib.mjs';
 
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -70,9 +71,7 @@ export class Family {
   existing(repo) {
     const directory = this.path(repo);
     if (!exists(directory) && !isLink(directory)) return false;
-    const gd = path.join(directory, '.git');
-    if (isLink(directory) || isLink(gd) || !exists(gd) || !fs.statSync(gd).isDirectory() ||
-        gitText(directory, 'rev-parse', '--show-toplevel') !== directory) throw new Error(`${directory}: expected a canonical primary checkout`);
+    validateCheckout(directory);
     return true;
   }
   // Where member checkouts and their pin tags come from. The forge is the

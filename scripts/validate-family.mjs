@@ -1,3 +1,4 @@
+import { validateTree } from './family-tree-validation.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,32 +9,6 @@ import { validateVendoredTrust } from './vendored-trust.mjs';
 import { reportGateContract } from './gate-contract.mjs';
 import { pinsOffMain } from './pins-on-main.mjs';
 
-function validateDependencies(file, root) {
-  const queue = [readToml(file)];
-  while (queue.length) {
-    for (const value of Object.values(queue.pop())) {
-      if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
-      queue.push(value);
-      if (value.git && (value.branch || !(value.tag || value.rev))) throw new Error(`${file}: Git dependency needs an immutable pin`);
-      if (value.path) {
-        const relative = path.relative(root, path.resolve(path.dirname(file), value.path));
-        if (relative.startsWith('../') || path.isAbsolute(relative)) throw new Error(`${file}: committed cross-repo path dependency`);
-      }
-    }
-  }
-}
-function validateTree(root) {
-  for (const relative of gitText(root, 'ls-files', '-z').split('\0')) {
-    const file = path.join(root, relative);
-    if (!exists(file) || !fs.statSync(file).isFile() || relative.startsWith('conformance/fixtures/')) continue;
-    if (path.basename(file) === 'Cargo.toml') validateDependencies(file, root);
-    if (relative === 'action.yml') {
-      for (const [, use] of fs.readFileSync(file, 'utf8').matchAll(/\buses:\s*["']?([^\s"'#]+)/g)) {
-        if (!use.startsWith('./') && !/^[^@]+@[a-f0-9]{40}$/.test(use)) throw new Error(`${file}: unpinned action ${use}`);
-      }
-    }
-  }
-}
 try {
   const family = new Family(path.dirname(path.dirname(fileURLToPath(import.meta.url))));
   const checkouts = process.argv.includes('--checkouts');
