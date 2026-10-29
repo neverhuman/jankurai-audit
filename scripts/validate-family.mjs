@@ -12,6 +12,11 @@ import { pinsOffMain } from './pins-on-main.mjs';
 try {
   const family = new Family(path.dirname(path.dirname(fileURLToPath(import.meta.url))));
   const checkouts = process.argv.includes('--checkouts');
+  const hubOnly = process.argv.includes('--hub-only');
+  if (hubOnly && (checkouts || process.argv.includes('--pins-on-main'))) throw new Error('--hub-only cannot be combined with locked checkout validation');
+  // The hub fast lane must not inspect unrelated runner sibling revisions.
+  // The required lane separately proves every committed lock input.
+  if (hubOnly) family.repos = family.repos.filter(repo => repo.name === 'jankurai');
   // The gate contract is advisory until the family's lane surfaces converge, so
   // it is off by default and never fails a run unless asked to.
   const blockingGate = process.argv.includes('--gate-contract-blocking');
