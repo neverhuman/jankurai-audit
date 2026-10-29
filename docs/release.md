@@ -31,13 +31,35 @@ Until that PR merges, the pin is all zeros. Signing refuses to run and the
 installer refuses every key-signed tag. Back up the private key and its password
 offline, in separate places.
 
+### Prepare release notes before tagging
+
+The release preparer generates notes with Git, using the previous published
+release tag and the commit that will be released. For example, to prepare the
+next release from the current checkout:
+
+```sh
+previous_tag=v1.7.5
+next_version=1.7.6
+git rev-parse --verify "refs/tags/$previous_tag^{commit}"
+mkdir -p target/release-notes
+{
+  printf '## %s\n\n' "$next_version"
+  git log --reverse --no-merges --format='- %s%n%(trailers:key=Todo)' "$previous_tag..HEAD"
+} > "target/release-notes/$next_version.md"
+```
+
+Review the generated file, including rollback commits and compatibility changes,
+then insert that version block into `CHANGELOG.md` in the release preparation
+PR. Preserve existing historical entries and any pending `Unreleased` notes;
+carry pending notes into the release they describe. Contributors supply clear
+commit subjects and `Todo:` trailers, without per-change changelog edits. The
+command above is the generation step; the build and publisher do not run it.
+
 ### Every release
 
 The tag must already exist on the forge and on the GitHub mirror. Tags are
 immutable. Never move one.
-Release notes are generated from the commits since the last release, using their
-subjects and `Todo:` trailers, before `CHANGELOG.md` is updated for the new
-version.
+The release preparation PR above must already have landed before the tag is cut.
 
 ```sh
 tag=v1.7.5
