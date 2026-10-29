@@ -58,8 +58,8 @@ commit = "eec4169e2aeb79b012c94a624258d6620b44b660"
 
 [[repo]]
 repo = "jankurai-tools-dedup"
-tag = "ci-9fe7e7404949c2e0bb2527a37b5ac0baeb007640"
-commit = "9fe7e7404949c2e0bb2527a37b5ac0baeb007640"
+tag = "ci-8bc3c59acd0f570ca41880a8a4ec9915feed609d"
+commit = "8bc3c59acd0f570ca41880a8a4ec9915feed609d"
 
 [[repo]]
 repo = "jankurai-tools-analyzers"
@@ -68,8 +68,8 @@ commit = "9bb23d05e4d45eca2887434ca9ef7fa9d256f366"
 
 [[repo]]
 repo = "jankurai-tools-fleet"
-tag = "ci-7a65e424d3dc068da6f07d6ca0bce43757674123"
-commit = "7a65e424d3dc068da6f07d6ca0bce43757674123"
+tag = "ci-09040ae652cc7d1f11609feacb2ae087c1517c32"
+commit = "09040ae652cc7d1f11609feacb2ae087c1517c32"
 
 [[repo]]
 repo = "jankurai-deploy"
