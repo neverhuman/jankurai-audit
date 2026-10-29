@@ -60,6 +60,12 @@ esac
 source "$release_tooling/scripts/node-bootstrap.sh"
 # One source lane; members become verified build inputs, not new worktrees.
 source_primary="$(git -C "$source_repo" rev-parse --path-format=absolute --git-common-dir)"
+# Native builds cannot remount their source. Require a public, reproducible
+# primary location before allocating a lane; Linux containers use neutral mounts.
+if [[ "$builder" == host ]]; then
+  [[ "$(realpath "$(dirname "$source_primary")")" == /jankurai/repository ]] ||
+    fail 'native release builds require the existing primary repository at /jankurai/repository; private build paths must not enter release assets'
+fi
 src="$(node "$release_tooling/ops/release/prepare-source.mjs" "$source_repo" "$tag" "$expect" "release-$tag-$target")"
 source "$src/scripts/node-bootstrap.sh"
 out="$(mkdir -p "${out:-$src/target/release-dist/$tag}" && cd "${out:-$src/target/release-dist/$tag}" && pwd)"
@@ -116,30 +122,35 @@ if [[ "$builder" == container ]]; then
   image_id="$(docker image inspect --format '{{.Id}}' "$image")"
   # A private Cargo home under the workdir: Git and crates.io sources are fetched
   # here on the host, where the member credentials live, and the container
-  # compiles offline. Build paths keep the same names inside the container.
+  # compiles offline. Stable container paths also normalize env!(CARGO_MANIFEST_DIR),
+  # which rustc's --remap-path-prefix does not rewrite.
   cargo_home="$workdir/cargo-home"
+  container_src=/jankurai/source
+  container_tooling=/jankurai/tooling
+  container_workdir="$container_src/${workdir#"$src/"}"
+  container_cargo_home="$container_workdir/cargo-home"
   mkdir -p "$cargo_home" "$workdir/home" "$workdir/etc"
   # The build user needs an account entry (Node's os.userInfo); name only it.
-  printf 'root:x:0:0::/root:/bin/sh\nbuilder:x:%s:%s::%s:/bin/sh\n' "$(id -u)" "$(id -g)" "$workdir/home" > "$workdir/etc/passwd"
+  printf 'root:x:0:0::/root:/bin/sh\nbuilder:x:%s:%s::%s:/bin/sh\n' "$(id -u)" "$(id -g)" "$container_workdir/home" > "$workdir/etc/passwd"
   printf 'root:x:0:\nbuilder:x:%s:\n' "$(id -g)" > "$workdir/etc/group"
   in_builder() {
     docker run --rm --network host --user "$(id -u):$(id -g)" \
-      --volume "$src:$src" --volume "$release_tooling:$release_tooling:ro" \
-      --volume "$source_primary:$source_primary:ro" --workdir "$src" \
+      --volume "$src:$container_src" --volume "$release_tooling:$container_tooling:ro" \
+      --volume "$source_primary:$source_primary:ro" --workdir "$container_src" \
       --volume "$workdir/etc/passwd:/etc/passwd:ro" --volume "$workdir/etc/group:/etc/group:ro" \
-      --env HOME="$workdir/home" --env CARGO_HOME="$cargo_home" --env CARGO_NET_OFFLINE=true \
+      --env HOME="$container_workdir/home" --env CARGO_HOME="$container_cargo_home" --env CARGO_NET_OFFLINE=true \
       --env SOURCE_DATE_EPOCH --env CARGO_INCREMENTAL --env CARGO_PROFILE_DEV_DEBUG --env CARGO_NET_GIT_FETCH_WITH_CLI \
       --env TZ --env LC_ALL --env RUSTFLAGS="${RUSTFLAGS:-}" "$image" "$@"
   }
   sysroot="$(in_builder rustc --print sysroot)"
   rustc_version="$(in_builder rustc --version)"
   [[ "$rustc_version" == "rustc $channel "* ]] || fail "builder toolchain is not $channel: $rustc_version"
-  export RUSTFLAGS="--remap-path-prefix=$src=/jankurai --remap-path-prefix=$cargo_home=/cargo --remap-path-prefix=$sysroot=/rust"
+  export RUSTFLAGS="--remap-path-prefix=$container_src=/jankurai --remap-path-prefix=$container_cargo_home=/cargo --remap-path-prefix=$sysroot=/rust"
   note "Fetching Cargo sources on the host into $cargo_home"
   node "$release_tooling/ops/release/compose-source.mjs" fuse "$src"
   (cd "$src/.fusion" && CARGO_HOME="$cargo_home" cargo fetch --locked)
   note "Building $tag for $target in $image ($rustc_version)"
-  in_builder node "$release_tooling/ops/release/compose-source.mjs" build "$src" "$target"
+  in_builder node "$container_tooling/ops/release/compose-source.mjs" build "$container_src" "$target"
   in_builder node --test scripts/family-operation-review.test.mjs scripts/family-recovery.test.mjs
   record="$workdir/builder.json"
   in_builder node -e '
@@ -147,7 +158,8 @@ if [[ "$builder" == container ]]; then
     const run = (cmd, args) => execFileSync(cmd, args, { encoding: "utf8" }).trim();
     const [image, imageId, base, dockerfileSha] = process.argv.slice(1);
     process.stdout.write(JSON.stringify({
-      kind: "container", image, image_id: imageId, base_image: base, dockerfile_sha256: dockerfileSha,
+      kind: "container", build_root: "/jankurai", source_root: "/jankurai/source",
+      image, image_id: imageId, base_image: base, dockerfile_sha256: dockerfileSha,
       glibc: run("ldd", ["--version"]).split("\n")[0],
       toolchain: { rustc: run("rustc", ["-vV"]), cargo: run("cargo", ["--version"]),
         node: process.version, npm: run("npm", ["--version"]) },

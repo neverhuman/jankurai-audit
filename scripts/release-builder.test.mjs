@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { releaseBuildRoot } from '../ops/release/package-release.mjs';
 
 const hub = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const dockerfile = fs.readFileSync(path.join(hub, 'ops/release/builder/Dockerfile'), 'utf8');
@@ -27,4 +28,14 @@ test('Linux releases build in the container by default and record it in provenan
   assert.match(build, /JANKURAI_RELEASE_BUILDER_RECORD/);
   const packager = fs.readFileSync(path.join(hub, 'ops/release/package-release.mjs'), 'utf8');
   for (const field of ['image_id', 'base_image', 'dockerfile_sha256', 'glibc']) assert.ok(packager.includes(field), field);
+});
+
+test('container provenance excludes private source roots and refuses missing neutral coordinates', () => {
+  const record = { kind: 'container', build_root: '/jankurai', source_root: '/jankurai/source' };
+  for (const source of ['/home/alice/repo/.agent/worktrees/release', '/srv/bob/project/.agent/worktrees/release']) {
+    assert.equal(releaseBuildRoot(source, record), '/jankurai');
+    assert.throws(() => releaseBuildRoot(source, { kind: 'container' }), /neutral/);
+    assert.throws(() => releaseBuildRoot(source, { ...record, source_root: source }), /neutral/);
+    assert.throws(() => releaseBuildRoot(source, { ...record, build_root: path.dirname(source) }), /neutral/);
+  }
 });

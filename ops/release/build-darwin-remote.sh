@@ -2,7 +2,7 @@
 # Build Apple Silicon assets in registered lanes of an existing remote hub.
 # The remote host needs the host lane sweeper, Git, rustup, Node/npm and its own
 # forge read credentials. Signing credentials never leave the signing host.
-# usage: build-darwin-remote.sh --host alias --tag vX.Y.Z --remote-repo relative/path
+# usage: build-darwin-remote.sh --host alias --tag vX.Y.Z --remote-repo /jankurai/repository
 #        [--dist target/release-dist/vX.Y.Z] [--members hosted|mirror]
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 host='' tag='' dist='' remote_repo='' members=hosted
@@ -19,7 +19,7 @@ while [[ $# -gt 0 ]]; do
 done
 [[ "$host" =~ ^[A-Za-z0-9][A-Za-z0-9@._-]*$ ]] || fail '--host must be a plain SSH alias'
 valid_release_tag "$tag" || fail 'a release tag vX.Y.Z is required'
-[[ "$remote_repo" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ && "$remote_repo" != *..* ]] || fail '--remote-repo must name an existing hub relative to remote HOME'
+[[ "$remote_repo" == /jankurai/repository ]] || fail 'native release builds require --remote-repo /jankurai/repository (an existing primary hub)'
 [[ "$members" == hosted || "$members" == mirror ]] || fail '--members must be hosted or mirror'
 dist="${dist:-$release_tooling/target/release-dist/$tag}"
 [[ -f "$dist/provenance-x86_64-unknown-linux-gnu.json" ]] || fail "build the Linux target into $dist first"

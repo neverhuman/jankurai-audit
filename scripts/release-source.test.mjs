@@ -65,3 +65,10 @@ test('unexpected generated source and linked committed inputs fail post-build ve
   fs.unlinkSync(path.join(dir, 'VERSION')); fs.symlinkSync(path.join(f.member, 'VERSION'), path.join(dir, 'VERSION'));
   assert.throws(() => verify(f.hub, f.head), /committed build input changed/);
 });
+
+test('exported executable modes remain exact under a restrictive caller umask', t => {
+  const f = fixture(t), previous = process.umask(0o077);
+  try { materialize(f.hub, f.root); } finally { process.umask(previous); }
+  assert.equal(fs.statSync(path.join(memberRoot(f.hub), 'jankurai-core/build.sh')).mode & 0o777, 0o755);
+  verify(f.hub, f.head);
+});

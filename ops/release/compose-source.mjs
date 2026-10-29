@@ -50,6 +50,7 @@ export function materialize(hub, source = 'hosted') {
       const destination = path.join(member.directory, name);
       fs.mkdirSync(path.dirname(destination), { recursive: true });
       fs.writeFileSync(destination, io.readFileSync(destination), { flag: 'wx', mode: entry.mode === '100755' ? 0o755 : 0o644 });
+      fs.chmodSync(destination, entry.mode === '100755' ? 0o755 : 0o644);
     }
     console.error(`materialized ${member.name} ${member.commit}`);
   }

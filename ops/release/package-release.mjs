@@ -15,6 +15,14 @@ export const PRODUCTS = ['jankurai', 'tuiwright'];
 const COMPANION = /\.(sha256|cosign\.bundle)$/;
 const digest = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
+export function releaseBuildRoot(source, record) {
+  if (!record) return path.dirname(source);
+  if (record.kind !== 'container' || record.build_root !== '/jankurai' || record.source_root !== '/jankurai/source') {
+    throw new Error('container builder record must describe the neutral /jankurai/source mount');
+  }
+  return record.build_root;
+}
+
 function run(args, { cwd, capture = true } = {}) {
   const result = spawnSync(args[0], args.slice(1), { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
     stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit' });
@@ -72,7 +80,7 @@ export function packageRelease({ source, target, out, tooling, tag }) {
     commit, tree, source_date_epoch: epoch,
     // jankurai embeds its crate directory (CARGO_MANIFEST_DIR), so a byte-identical
     // rebuild needs this same build root; every other asset is path-independent.
-    build_root: path.dirname(source),
+    build_root: releaseBuildRoot(source, record),
     family_lock_sha256: digest(path.join(source, 'family.lock')),
     cargo_lock_sha256: digest(path.join(source, 'Cargo.lock')),
     fusion_cargo_lock_sha256: digest(path.join(fusion, 'Cargo.lock')),

@@ -71,7 +71,7 @@ git fetch origin --tags
 ops/release/build-release.sh --tag "$tag" --expect-commit "$(git rev-parse "refs/tags/$tag^{commit}")" \
   --out "target/release-dist/$tag"
 # 2. Optional: Apple Silicon macOS, built on a macOS build host over SSH.
-ops/release/build-darwin-remote.sh --host <macos-build-host> --remote-repo <existing-hub-path> --tag "$tag" --dist "target/release-dist/$tag"
+ops/release/build-darwin-remote.sh --host <macos-build-host> --remote-repo /jankurai/repository --tag "$tag" --dist "target/release-dist/$tag"
 # 3. Sign (cosign 3.1.3 on PATH or in $COSIGN).
 JANKURAI_RELEASE_SIGNING_KEY=~/.config/jankurai-release/jankurai-release-2026.key \
 JANKURAI_RELEASE_SIGNING_PASSWORD_FILE=~/.config/jankurai-release/password \
@@ -100,6 +100,10 @@ is mandatory. The builder runs the host lane sweep, refuses more than eight
 lanes, and creates one locked, detached source worktree under the hub repository's
 `.agent/worktrees/release-<tag>-<target>`. It never reuses an existing lane.
 Build output stays in that lane's `target/`; a custom `--workdir` must stay there.
+The host must already provide its operator-managed `~/.agent/bin/lanes` helper.
+Its `sweep --apply` operation removes eligible idle lanes according to the host's
+custody policy before capacity is checked; inspect that host policy before release
+work. The repository does not install or replace this privileged host dependency.
 
 `compose-source.mjs` fetches real member tags and main into fresh bare object
 stores, checks every locked commit and main ancestry, then exports complete
@@ -122,15 +126,23 @@ the primary repository. Never delete a failed build tree blindly or use
 `rm -rf` for worktree cleanup. Reuse the retained target if resuming that lane;
 a fresh source allocation deliberately refuses to overwrite it.
 
-**Reproducibility.** `SOURCE_DATE_EPOCH` is the tag's commit time. Rust paths are
-remapped (`--remap-path-prefix` for the build tree, Cargo home and sysroot).
+**Reproducibility.** `SOURCE_DATE_EPOCH` is the tag's commit time. Linux compilation
+mounts the registered source lane at `/jankurai/source` and the tooling at
+`/jankurai/tooling`. Cargo home and the builder account home are also below that
+neutral source mount. Rust paths are remapped (`--remap-path-prefix` for the
+build tree, Cargo home and sysroot).
 Tarballs are ustar with sorted entries, root ownership, fixed modes and mtimes,
-and gzip without a timestamp. Provenance has no timestamps or host names. Two
-builds at the same build root produce byte-identical assets. `tuiwright` and
-every other asset are also identical across different build roots. `jankurai`
-embeds its crate directory (`CARGO_MANIFEST_DIR`, used by `jankurai-core`), so
-reproducing it needs the same build root. Provenance records that root as
-`build_root`.
+and gzip without a timestamp. Provenance records the source commit time and OS
+platform, but no wall-clock build time, host name or private host checkout path.
+`jankurai` embeds its crate directory (`CARGO_MANIFEST_DIR`, used by
+`jankurai-core`); path remapping alone cannot normalize that environment literal.
+The stable container mount makes it independent of the host's repository path,
+and provenance records `build_root: /jankurai` for Linux container builds.
+Native builds cannot remount the source: they require the existing primary hub
+at `/jankurai/repository`, with its registered source lane beneath
+`.agent/worktrees/`. Other native roots fail before a source lane is allocated,
+so private paths cannot silently enter a published native asset. Reproduction
+uses the same tag, target, toolchain, neutral path and release tooling revision.
 
 **Packaging** (`ops/release/package-release.mjs`). It keeps the asset names and
 tarball layout the installer has always checked:
