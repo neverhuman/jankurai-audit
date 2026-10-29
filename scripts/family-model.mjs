@@ -147,9 +147,17 @@ export class Family {
         // Members' Cargo git routes still name the pre-rename repositories
         // (github.com/<public_owner>/<repo>.git, see docs/forge-authority.md),
         // so the fusion patches that source, not the mirror URL.
-        const source = crateSource(this.manifest, repo);
-        if (!patches.has(source)) patches.set(source, []);
-        patches.get(source).push([name, relative]);
+        const sources = [crateSource(this.manifest, repo)];
+        // The 1.7.6 kernel source migration keeps one kernel in fusion while
+        // older member pins can still name its historical GitHub route.
+        if (repo.name === 'jankurai-tools-kernel') {
+          sources.push(sources[0].replace('https://github.com/', 'https://www.github.com/'));
+          sources.push('https://git.jeryu.ai/git/root/jankurai-tools-kernel');
+        }
+        for (const source of sources) {
+          if (!patches.has(source)) patches.set(source, []);
+          patches.get(source).push([name, relative]);
+        }
       }
     }
     let cargo = `[workspace]\nresolver = "2"\nmembers = ${JSON.stringify(members, null, 2)}\n`;

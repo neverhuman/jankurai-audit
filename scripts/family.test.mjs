@@ -4,14 +4,14 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { Family } from './family-model.mjs';
-import { git, gitText, atomicWrite, buildEnvironment } from './family-lib.mjs';
+import { git, gitText, atomicWrite, buildEnvironment, readToml } from './family-lib.mjs';
 import { lockText, successful, update } from './family-update.mjs';
 import { branchFor, validateCandidate, publish } from './publish-family-update.mjs';
 
-function fixture(t) {
+function fixture(t, member = 'jankurai-core') {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'family-ci-test-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const hub = path.join(root, 'jankurai'), repo = path.join(root, 'jankurai-core');
+  const hub = path.join(root, 'jankurai'), repo = path.join(root, member);
   for (const directory of [hub, repo]) {
     fs.mkdirSync(directory);
     git(directory, ['init', '-q', '-b', 'main']);
@@ -23,17 +23,38 @@ function fixture(t) {
   }
   const sha = gitText(repo, 'rev-parse', 'HEAD');
   git(repo, ['tag', 'fixture-v1']);
-  const names = ['jankurai', 'jankurai-core'];
+  const names = ['jankurai', member];
   let manifest = 'schema_version = "3.0.0"\nfamily = "jankurai"\nauthority_forge = "jeryu"\nhosted_base_url = "https://git.neverhuman.org"\nhosted_git_url_template = "https://git.neverhuman.org/git/{owner}/{repo}.git"\nmirror_forge = "github"\nmirror_base_url = "https://github.com"\nmirror_git_url_template = "https://github.com/{owner}/{repo}.git"\nmirror_repo_prefix = "jankurai-audit"\npublic_owner = "neverhuman"\nlocal_owner = "root"\nexpected_repo_count = 2\nrequired_repos = ["jankurai", "jankurai-core"]\n';
+  manifest = manifest.replace('required_repos = ["jankurai", "jankurai-core"]', `required_repos = ${JSON.stringify(names)}`);
   for (const name of names) {
     const mirror = name === 'jankurai' ? 'jankurai-audit' : `jankurai-audit${name.slice('jankurai'.length)}`;
     manifest += `\n[[repo]]\nname = "${name}"\npath = "${name}"\nslug = "root/${name}"\njeryu_slug = "root/${name}"\ndefault_branch = "main"\nrequired_check = "${name}/required"\nhosted = "https://git.neverhuman.org/git/root/${name}.git"\ngithub = "https://github.com/neverhuman/${mirror}.git"\ngithub_slug = "neverhuman/${mirror}"\nmirror_github = true\nmirror_github_main = true\n`;
   }
   fs.writeFileSync(path.join(hub, 'repos.manifest.toml'), manifest);
-  fs.writeFileSync(path.join(hub, 'family.lock'), `[[repo]]\nrepo = "jankurai-core"\ntag = "fixture-v1"\ncommit = "${sha}"\n`);
+  fs.writeFileSync(path.join(hub, 'family.lock'), `[[repo]]\nrepo = "${member}"\ntag = "fixture-v1"\ncommit = "${sha}"\n`);
   const family = new Family(hub);
   return { root, hub, repo, sha, family };
 }
+test('fusion resolves forge and historical kernel routes to the same family source', t => {
+  const { repo, family } = fixture(t, 'jankurai-tools-kernel');
+  const crate = path.join(repo, 'crates/kernel');
+  fs.mkdirSync(crate, { recursive: true });
+  fs.writeFileSync(path.join(repo, 'Cargo.toml'), '[workspace]\nmembers = ["crates/kernel"]\n');
+  fs.writeFileSync(path.join(crate, 'Cargo.toml'), '[package]\nname = "jankurai-audit-kernel"\nversion = "1.7.6"\n');
+  family.fuse(false);
+  const manifest = readToml(path.join(family.fusion, 'Cargo.toml'));
+  const routes = [
+    'https://github.com/neverhuman/jankurai-tools-kernel.git',
+    'https://www.github.com/neverhuman/jankurai-tools-kernel.git',
+    'https://git.jeryu.ai/git/root/jankurai-tools-kernel',
+  ];
+  assert.deepEqual(Object.keys(manifest.patch).sort(), routes.sort());
+  for (const route of routes) {
+    const patched = manifest.patch[route]['jankurai-audit-kernel'].path;
+    assert.equal(fs.realpathSync(path.resolve(family.fusion, patched)), crate);
+  }
+  assert.equal(manifest.workspace.members.length, 1);
+});
 test('build bootstrap preserves dirty files and does not fetch existing heads', t => {
   const { repo, sha, family } = fixture(t);
   fs.writeFileSync(path.join(repo, 'README.md'), 'valuable draft');
