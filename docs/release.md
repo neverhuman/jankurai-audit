@@ -64,14 +64,14 @@ The release preparation PR above must already have landed before the tag is cut.
 ```sh
 tag=v1.7.5
 git fetch origin --tags
-# 1. Build (Linux x86-64). A neutral build root keeps home paths out of the binary.
+# 1. Build (Linux x86-64) in one registered host-managed source worktree.
 #    The compile runs in the digest-pinned Debian 12 image of ops/release/builder
 #    (needs Docker), so the binaries need at most glibc 2.36; the provenance
 #    records the image. Git and crates.io sources are fetched on the host.
-ops/release/build-release.sh --tag "$tag" --workdir "/srv/jankurai-release/$tag-x86_64-unknown-linux-gnu" \
+ops/release/build-release.sh --tag "$tag" --expect-commit "$(git rev-parse "refs/tags/$tag^{commit}")" \
   --out "target/release-dist/$tag"
 # 2. Optional: Apple Silicon macOS, built on a macOS build host over SSH.
-ops/release/build-darwin-remote.sh --host <macos-build-host> --tag "$tag" --dist "target/release-dist/$tag"
+ops/release/build-darwin-remote.sh --host <macos-build-host> --remote-repo <existing-hub-path> --tag "$tag" --dist "target/release-dist/$tag"
 # 3. Sign (cosign 3.1.3 on PATH or in $COSIGN).
 JANKURAI_RELEASE_SIGNING_KEY=~/.config/jankurai-release/jankurai-release-2026.key \
 JANKURAI_RELEASE_SIGNING_PASSWORD_FILE=~/.config/jankurai-release/password \
@@ -94,15 +94,33 @@ it from that file and never prints it. A dry run makes no writes. Given
 
 ## What each step does
 
-**Build** (`ops/release/build-release.sh`). This tooling checkout clones the
-hub at the tag into a fresh build tree. `compose-source.mjs` clones every member
-beside it at its `family.lock` tag, and each tag must resolve to its locked
-commit. Members come from the forge using your Git credentials, or from the
-GitHub mirror with `--members mirror`. Then the tag's own
-`scripts/family.sh build --release --target <triple>` builds the release, the
-tag's native family-operation tests run, and a check confirms every tree is
-still clean and at its pin. Cross builds are refused, so each target builds on
-a host of that platform.
+**Build** (`ops/release/build-release.sh`). The local source repository must
+already contain the immutable tag and current `origin/main`. `--expect-commit`
+is mandatory. The builder runs the host lane sweep, refuses more than eight
+lanes, and creates one locked, detached source worktree under the hub repository's
+`.agent/worktrees/release-<tag>-<target>`. It never reuses an existing lane.
+Build output stays in that lane's `target/`; a custom `--workdir` must stay there.
+
+`compose-source.mjs` fetches real member tags and main into fresh bare object
+stores, checks every locked commit and main ancestry, then exports complete
+tracked blobs into `target/release-members`. These are generated compilation
+inputs, not Git checkouts: no member clones or additional worktrees are made.
+Symlinks and submodules are refused. The tag's own fusion generator and build
+implementation consume those verified inputs. Tracked bytes and executable
+modes are checked before and after building, and extra files outside build
+output directories are refused. Member sources default to the forge; use
+`--members mirror` for the public mirror or a local checkout root as an object
+source. Cross builds remain refused. Native family-operation tests still run.
+
+The source lane stays locked with all build evidence after success or failure.
+Before cleanup, record `git status`, `git stash list`, local-only commits and
+local/remote tags, bundle any unique refs, and verify the bundle. Inspect and
+preserve `target/` and `.fusion/` (binaries, object inputs, receipts and reports)
+to the release evidence directory before removing the worktree. Then use
+`git worktree unlock <source-lane>` and `git worktree remove <source-lane>` from
+the primary repository. Never delete a failed build tree blindly or use
+`rm -rf` for worktree cleanup. Reuse the retained target if resuming that lane;
+a fresh source allocation deliberately refuses to overwrite it.
 
 **Reproducibility.** `SOURCE_DATE_EPOCH` is the tag's commit time. Rust paths are
 remapped (`--remap-path-prefix` for the build tree, Cargo home and sysroot).
@@ -206,7 +224,7 @@ that later signing or publication happened.
    release inventory before starting. Private-key backup custody belongs to
    the owner and is never part of the agent's evidence directory.
 5. Build with a bounded command, for example
-   `timeout --signal=TERM --kill-after=60s 2h ops/release/build-release.sh --tag "$tag" --workdir "/srv/jankurai-release/$tag-x86_64-unknown-linux-gnu" --out "target/release-dist/$tag"`.
+   `timeout --signal=TERM --kill-after=60s 2h ops/release/build-release.sh --tag "$tag" --expect-commit "$(git rev-parse "refs/tags/$tag^{commit}")" --out "target/release-dist/$tag"`.
    Retain the build log, provenance and checksums. Check free disk first; stop
    below 20 GiB available. One active build per host is the resource quota.
 6. After owner signing, save the output of `verify-staged-release.sh`, the

@@ -8,6 +8,7 @@ import zlib from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { memberRoot } from './compose-source.mjs';
 
 export const TARGETS = ['x86_64-unknown-linux-gnu', 'aarch64-apple-darwin'];
 export const PRODUCTS = ['jankurai', 'tuiwright'];
@@ -118,7 +119,7 @@ export function packageRelease({ source, target, out, tooling, tag }) {
   // Platform-independent assets come from the Linux build only.
   if (target === 'x86_64-unknown-linux-gnu') {
     const packed = run(['npm', 'pack', '--silent', '--workspace', '@jankurai/ux-qa', '--pack-destination', out],
-      { cwd: path.join(path.dirname(source), 'jankurai-tools-ux') }).split('\n').at(-1);
+      { cwd: path.join(memberRoot(source), 'jankurai-tools-ux') }).split('\n').at(-1);
     if (packed !== `jankurai-ux-qa-${version}.tgz`) throw new Error(`unexpected UX package: ${packed}`);
     for (const [name, from] of [['family.lock', path.join(source, 'family.lock')], ['Cargo.lock', path.join(source, 'Cargo.lock')],
       ['jankurai-installer.sh', installer]]) fs.copyFileSync(from, path.join(out, name));
