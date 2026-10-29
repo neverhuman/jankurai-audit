@@ -161,6 +161,44 @@ immutable releases on the mirror so published assets cannot change afterwards.
 
 ## Release automation
 
+### Release gate and retained evidence
+
+Before creating a public release, retain the following evidence under
+`target/release-evidence/<tag>/` and copy it to the release backup with the
+unsigned/signed dist inventory. A successful command alone is not evidence
+that later signing or publication happened.
+
+1. Record `git rev-parse HEAD`, `git status --porcelain`, and the forge PR URL.
+   Require a clean merged source, green exact-head required CI and independent
+   review. Run `bash scripts/ci-local.sh required` and save its complete log.
+2. Run `bash scripts/ci-local.sh security` and retain the redacted scan log,
+   npm audit result and `target/jankurai/security/sbom.json`. Stop on failure.
+3. Run `bash scripts/ci-local.sh audit` with the governed auditor and retain
+   `.jankurai/repo-score.json` and `.md`. Inspect the decision and findings;
+   an advisory audit exit alone does not authorize release.
+4. Record `git ls-remote origin refs/tags/<tag>` and its GitHub mirror result.
+   Both must identify the reviewed source. Backup refs and the previous signed
+   release inventory before starting. Private-key backup custody belongs to
+   the owner and is never part of the agent's evidence directory.
+5. Build with a bounded command, for example
+   `timeout --signal=TERM --kill-after=60s 2h ops/release/build-release.sh --tag "$tag" --workdir "/srv/jankurai-release/$tag-x86_64-unknown-linux-gnu" --out "target/release-dist/$tag"`.
+   Retain the build log, provenance and checksums. Check free disk first; stop
+   below 20 GiB available. One active build per host is the resource quota.
+6. After owner signing, save the output of `verify-staged-release.sh`, the
+   publisher dry run and publication. These exercise archive integrity,
+   signatures, inventory, installer and the native binaries before publication.
+7. For monitoring after publication, retain `ops/ci/public-install-smoke.sh`
+   output using `RELEASE_TAG="$tag"`. A failed anonymous install blocks host
+   promotion. Inspect the installed version and signed-install receipt on each
+   consuming host after its governed promotion.
+
+Abuse controls are enforced by the publisher's refusal to overwrite assets,
+the installer's pinned key and archive validation, and the scoped GitHub token.
+On rate limit or authentication failure stop the run; do not rotate credentials
+or run a retry loop. Rollback selects the previous verified release and its
+receipt through the same governed installer; never rewrite tags or replace
+published assets. Preserve the failed release's evidence for diagnosis.
+
 There is none on GitHub. Pins in `family.lock` are immutable `ci-<sha>` tags. A
 release starts only when the owner runs the steps above. The gate for every
 change is the forge's `<repo>/required` check. Before tagging, run the full

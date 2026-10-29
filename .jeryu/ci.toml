@@ -7,3 +7,7 @@ provider = "jeryu"
 [[lane]]
 name = "required"
 command = "bash ops/ci/required.sh"
+
+[[lane]]
+name = "fast"
+command = "bash ops/ci/fast.sh"

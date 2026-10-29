@@ -36,7 +36,11 @@ demo:
 # Validates required split metadata, Jeryu mirror config, lockfile pins, branch
 # dependencies, committed cross-repo path dependencies, and action pinning.
 fast:
-    bash scripts/validate-family.sh
+    bash scripts/ci-local.sh fast
+
+# Full required proof, including the fresh locked member composition.
+required:
+    bash scripts/ci-local.sh required
 
 # Run the full local check: fast lane, security scan, and self-audit.
 check:
@@ -47,7 +51,11 @@ verify: check
 
 # Run the hub validation suite (alias of the fast lane).
 test:
-    bash scripts/validate-family.sh
+    npm test
+
+# Narrow iteration for a named test; required still runs the complete suite.
+test-name pattern:
+    node --test --test-concurrency=4 --test-name-pattern {{quote(pattern)}} scripts/*.test.mjs scripts/demo/*.test.mjs
 
 # Security lane: secret scanning, supply-chain SBOM, and family lock review.
 # gitleaks scans the tracked tree for committed secrets; syft generates a
@@ -56,13 +64,11 @@ test:
 # family lock pin resolves to an immutable tag and commit (this hub's
 # dependency-audit surface, since no Cargo.toml/package.json is shipped).
 security:
-    gitleaks detect --source . --no-banner --redact
-    syft scan dir:. -o cyclonedx-json=target/jankurai/security/sbom.json
-    bash scripts/validate-family.sh
+    bash scripts/ci-local.sh security
 
 # Jankurai self-audit lane: writes the repo-score artifacts that CI uploads.
 audit:
-    .fusion/target/debug/jankurai audit . --no-score-history --json .jankurai/repo-score.json --md .jankurai/repo-score.md
+    bash scripts/ci-local.sh audit
 
 # Report every present member whose lane surface leaves contracts/gate-contract.md.
 # Advisory: it prints violations and stays green. Append `-blocking` to fail.

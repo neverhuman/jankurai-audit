@@ -12,7 +12,8 @@ own hosts; GitHub is a publishing mirror and runs no workflows.
 
 | Lane | Command | Proves |
 | --- | --- | --- |
-| `fast` | `bash scripts/validate-family.sh` | split metadata, lock pins, branch deps, cross-repo path deps, `action.yml` pinning |
+| `fast` | `bash scripts/ci-local.sh fast` | split metadata, lock pins, branch deps, cross-repo path deps, `action.yml` pinning, and the complete hub test suite |
+| `required` | `bash scripts/ci-local.sh required` | fast plus a fresh locked family with every pin on its member's main |
 | `security` | `gitleaks detect` + family-lock review | no committed secrets, no supply-chain drift |
 | `audit` | `jankurai audit . --json .jankurai/repo-score.json --md .jankurai/repo-score.md` | repo passes the jankurai standard |
 | `check` | `fast` + `security` + `audit` | the full local gate |
@@ -67,5 +68,24 @@ are never excepted.
 
 ## Pre-handoff checklist
 
-Run `bash scripts/ci-local.sh required` (equivalently `just fast`) before
+Run `bash scripts/ci-local.sh required` (equivalently `just required`) before
 handing off any change, then `just check` before cutting a release.
+
+## Iteration and resource limits
+
+`just test-name 'installer'` runs matching Node tests during a narrow repair;
+it does not replace the full required gate. `npm test` limits test-file
+concurrency to four processes, including on large build hosts. Reuse the
+checkout's `target/` build cache. `.fusion/` is an optional generated local
+workspace, not an artifact required in a fresh source checkout.
+
+The release budget is one build per target per candidate, with a quota of one
+active build per host. There are no paid model/API calls in this hub's gate;
+the spend cap for introducing them is zero without a separate owner decision.
+Run long release builds through `timeout --signal=TERM --kill-after=60s 2h`
+(see the release checklist). The stop condition is a nonzero command exit,
+timeout, failed integrity check, or insufficient disk. Do not automatically
+retry: inspect and retain the failed log before starting a corrected candidate.
+Ctrl-C is the operator kill switch for a foreground run; the timeout terminates
+the process group when the operator is away. Do not launch a replacement while
+the original build or its container is still running.

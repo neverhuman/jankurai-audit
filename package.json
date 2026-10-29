@@ -4,7 +4,7 @@
   "version": "1.7.5",
   "type": "module",
   "scripts": {
-    "test": "node --test scripts/*.test.mjs scripts/demo/*.test.mjs",
+    "test": "node --test --test-concurrency=4 scripts/*.test.mjs scripts/demo/*.test.mjs",
     "demo:verify": "node scripts/demo/verify-audit-gif.mjs docs/demo",
     "build": "bash scripts/family.sh build",
     "check": "bash scripts/family.sh check"

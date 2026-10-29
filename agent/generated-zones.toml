@@ -1,18 +1,5 @@
-# Generated zones for the jankurai hub.
-# These trees are produced by build/fusion commands, never hand-edited, and
-# regenerated from their declared source. Only zones whose output path exists in
-# this repo are declared so the audit never reports a missing generated artifact.
-
-[[zone]]
-path = "target/"
-source = "local jankurai audit and CI state"
-command = "bash scripts/validate-family.sh"
-read_only = true
-write_policy = "generated_output"
-
-[[zone]]
-path = ".fusion/"
-source = "jankurai hub scripts/fuse.sh"
-command = "./scripts/fuse.sh --source local --all"
-read_only = true
-write_policy = "generated_output"
+# The hub has no committed generated trees. target/ contains disposable test and
+# build output; .fusion/ is an optional local workspace made by scripts/fuse.sh.
+# Neither exists in a clean source checkout and neither is a shipped contract.
+# Do not edit either tree by hand: rerun its owning build/fusion command.
+# Register committed generated outputs here when the hub starts shipping them.
