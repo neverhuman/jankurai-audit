@@ -1,14 +1,12 @@
 // Allocate one owned, registered hub worktree. Failure never removes source or
 // evidence; cleanup is an explicit custody operation after publication.
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { objectGit as git } from '../../scripts/family-object-view.mjs';
 import { validateCheckout } from '../../scripts/family-worktree.mjs';
 
-export function prepareSource(repository, tag, expected, lane, { sweep = path.join(os.homedir(), '.agent/bin/lanes') } = {}) {
+export function prepareSource(repository, tag, expected, lane) {
   if (!/^v\d+\.\d+\.\d+$/.test(tag) || !/^[a-f0-9]{40}$/.test(expected) || (!/^[a-z0-9][a-z0-9._-]{0,80}$/.test(lane) || lane.includes('..'))) throw new Error('release source requires a tag, exact expected commit and safe lane name');
   const { primary } = validateCheckout(fs.realpathSync(repository));
   const commit = git(primary, ['rev-parse', `refs/tags/${tag}^{commit}`]);
@@ -16,15 +14,11 @@ export function prepareSource(repository, tag, expected, lane, { sweep = path.jo
   git(primary, ['merge-base', '--is-ancestor', commit, 'refs/remotes/origin/main']);
   const target = path.join(primary, '.agent', 'worktrees', lane);
   if (fs.existsSync(target)) throw new Error(`release lane exists; preserve and inspect it: ${target}`);
-  if (!fs.existsSync(sweep)) throw new Error(`host lane sweeper is required: ${sweep}`);
-  const swept = spawnSync(sweep, ['sweep', '--apply'], { cwd: primary, encoding: 'utf8' });
-  if (swept.status !== 0) throw new Error(`lane sweep failed: ${swept.stderr}`);
-  process.stderr.write(swept.stdout);
   const lanes = git(primary, ['worktree', 'list', '--porcelain']).split('\n').filter(line => line.startsWith('worktree ') && line.slice(9) !== primary);
   if (lanes.length >= 8) throw new Error('repository already has eight worktree lanes');
   const exclude = path.join(primary, '.git/info/exclude');
   const previous = fs.existsSync(exclude) ? fs.readFileSync(exclude, 'utf8') : '';
-  if (!previous.split('\n').includes('.agent/')) fs.appendFileSync(exclude, '\n.agent/\n');
+  if (!previous.split('\n').includes('.agent/')) throw new Error('operator custody preflight must configure .agent/ in .git/info/exclude before release allocation');
   git(primary, ['worktree', 'add', '--detach', '--lock', '--reason', `release source: ${tag}`, target, commit]);
   validateCheckout(target);
   return target;

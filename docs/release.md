@@ -96,14 +96,20 @@ it from that file and never prints it. A dry run makes no writes. Given
 
 **Build** (`ops/release/build-release.sh`). The local source repository must
 already contain the immutable tag and current `origin/main`. `--expect-commit`
-is mandatory. The builder runs the host lane sweep, refuses more than eight
-lanes, and creates one locked, detached source worktree under the hub repository's
+is mandatory. The builder refuses allocation when all eight host lanes are occupied and creates
+one locked, detached source worktree under the hub repository's
 `.agent/worktrees/release-<tag>-<target>`. It never reuses an existing lane.
 Build output stays in that lane's `target/`; a custom `--workdir` must stay there.
-The host must already provide its operator-managed `~/.agent/bin/lanes` helper.
-Its `sweep --apply` operation removes eligible idle lanes according to the host's
-custody policy before capacity is checked; inspect that host policy before release
-work. The repository does not install or replace this privileged host dependency.
+
+Before invoking a build, the operator completes the host's custody procedure:
+inspect active lanes, preserve unique commits and build evidence, run the
+host-authorized `~/.agent/bin/lanes sweep --apply` from the primary repository,
+and configure `.agent/` in `.git/info/exclude` under the host policy. Do this on
+the remote host too before a Darwin build. The release scripts do not invoke
+that external helper, remove existing lanes, or edit the exclusion policy.
+They fail closed if the exclusion has not been configured or capacity is full.
+Darwin reserves two of the same eight lanes (tooling and source), and requires
+both the release commit and tooling commit to be accepted on `origin/main`.
 
 `compose-source.mjs` fetches real member tags and main into fresh bare object
 stores, checks every locked commit and main ancestry, then exports complete
@@ -120,7 +126,10 @@ The source lane stays locked with all build evidence after success or failure.
 Before cleanup, record `git status`, `git stash list`, local-only commits and
 local/remote tags, bundle any unique refs, and verify the bundle. Inspect and
 preserve `target/` and `.fusion/` (binaries, object inputs, receipts and reports)
-to the release evidence directory before removing the worktree. Then use
+to the release evidence directory before removing the worktree. For Darwin,
+perform this custody sequence for both the tooling and source lanes on the
+remote host; also preserve the local and remote `.agent/release-transfer` /
+`target/release-transfer` bundle and copied assets before reusing those paths. Then use
 `git worktree unlock <source-lane>` and `git worktree remove <source-lane>` from
 the primary repository. Never delete a failed build tree blindly or use
 `rm -rf` for worktree cleanup. Reuse the retained target if resuming that lane;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build Apple Silicon assets in registered lanes of an existing remote hub.
-# The remote host needs the host lane sweeper, Git, rustup, Node/npm and its own
+# The remote host needs completed operator custody preflight, Git, rustup, Node/npm and its own
 # forge read credentials. Signing credentials never leave the signing host.
 # usage: build-darwin-remote.sh --host alias --tag vX.Y.Z --remote-repo /jankurai/repository
 #        [--dist target/release-dist/vX.Y.Z] [--members hosted|mirror]
@@ -26,6 +26,7 @@ dist="${dist:-$release_tooling/target/release-dist/$tag}"
 [[ -z "$(git -C "$release_tooling" status --porcelain)" ]] || fail 'release tooling checkout must be clean'
 tooling_commit="$(git -C "$release_tooling" rev-parse HEAD)"
 expected="$(git -C "$release_tooling" rev-parse --verify "refs/tags/$tag^{commit}")"
+git -C "$release_tooling" merge-base --is-ancestor "$tooling_commit" refs/remotes/origin/main || fail 'release tooling must be accepted on origin/main'
 [[ "$(ssh "$host" 'uname -s; uname -m' | tr '\n' /)" == Darwin/arm64/ ]] || fail "$host is not an Apple Silicon macOS host"
 bundle="$release_tooling/target/release-transfer/$tag-$tooling_commit"
 [[ ! -e "$bundle" ]] || fail "transfer evidence exists; preserve and inspect it: $bundle"
@@ -41,12 +42,13 @@ ssh "$host" "set -eu
   git fetch --quiet origin main
   git fetch --quiet \"\$primary/.agent/release-transfer/$tag-$tooling_commit/release.bundle\" '$tooling_commit' 'refs/tags/$tag:refs/tags/$tag'
   git merge-base --is-ancestor '$expected' refs/remotes/origin/main
-  \"\$HOME/.agent/bin/lanes\" sweep --apply
+  git merge-base --is-ancestor '$tooling_commit' refs/remotes/origin/main
+  # Reserve two of the eight lanes: tooling, then release source.
   count=\$(git worktree list --porcelain | grep -c '^worktree ')
   test \"\$count\" -le 7
   lane=\"\$primary/.agent/worktrees/release-tooling-$tooling_commit\"
   test ! -e \"\$lane\"
-  grep -qxF '.agent/' .git/info/exclude || printf '\\n.agent/\\n' >> .git/info/exclude
+  grep -qxF '.agent/' .git/info/exclude || { echo 'operator custody preflight must configure .agent/ exclusion' >&2; exit 1; }
   git worktree add --detach --lock --reason 'release tooling: $tag' \"\$lane\" '$tooling_commit'
   bash \"\$lane/ops/release/build-release.sh\" --tag '$tag' --expect-commit '$expected' --target aarch64-apple-darwin \\
     --source-repo \"\$primary\" --members '$members' --out \"\$lane/target/release-dist/$tag\""
