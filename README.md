@@ -61,7 +61,7 @@ The locked auditor's rule catalog is
 Linux x86-64 and Apple Silicon macOS:
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.5/jankurai-installer.sh | bash -s -- --tag v1.7.5'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.6/jankurai-installer.sh | bash -s -- --tag v1.7.6'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
 # jankurai 1.7.5
