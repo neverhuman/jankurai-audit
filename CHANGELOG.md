@@ -4,7 +4,7 @@ This file is written when a release is cut: its notes are generated from the com
 
 ## Unreleased
 
-## 1.7.6 - 2026-10-29
+## 1.7.6 - 2026-10-30
 
 - fix: restore hub audit and executable proof routes
 Todo: 20261029-020843-a168bb
@@ -24,6 +24,12 @@ Todo: 20261013-124854-891cb0
 - fix: build releases in a managed source worktree
 Todo: 20261029-053320-9ccfba
 
+- release: normalize build paths inside the Linux container
+Todo: 20261029-053320-9ccfba
+
+- release: require operator custody preflight without invoking host cleanup
+Todo: 20261029-053320-9ccfba
+
 - build: include the accepted diff-audit repair in release sources
 Todo: 20261029-220132-b3e662
 
@@ -39,10 +45,10 @@ Todo: 20261029-021147-cffb6c
 - release: regenerate fused native lock for 1.7.6
 Todo: 20261029-021147-cffb6c
 
-- release: normalize build paths inside the Linux container
-Todo: 20261029-053320-9ccfba
-
 - release: use the accepted dedup and fleet kernel migrations
+Todo: 20261029-021147-cffb6c
+
+- release: generate 1.7.6 notes from accepted source history
 Todo: 20261029-021147-cffb6c
 
 ## 1.7.5 - 2026-10-14
