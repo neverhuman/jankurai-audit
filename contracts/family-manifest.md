@@ -34,8 +34,19 @@ The 14 component revision/tag pairs appear only in `family.lock`. The hub itself
 is selected by its Git commit or release tag. `Cargo.lock` records the assembled
 Cargo graph; normal builds use `--locked`. Immutable tags must resolve to their
 recorded full 40-character commits. Bootstrap clones and pin fetches use
-`hosted`, the authority; the fusion `[patch]` keys stay on the `github` mirror
-URLs the committed `Cargo.toml` files name.
+`hosted`, the authority; the fusion `[patch]` keys match the historical Cargo
+source URLs the committed member manifests name, rather than the renamed mirrors.
+
+For the owner-authorized kernel migration of 2026-10-29, the kernel member alone
+declares `cargo_source_aliases`: its historical `www.github.com` spelling and
+`https://git.jeryu.ai/git/root/jankurai-tools-kernel`. `git.jeryu.ai` is the alias
+of the same hosted forge used by the accepted core, dedup and fleet dependency
+pins. The validator accepts exactly these two aliases, only on the kernel;
+other aliases or members are rejected. Fusion derives its additional patch keys
+from this declaration and redirects them to the one locked kernel input. The
+canonical `hosted` URL remains the source for fetching and verifying that input.
+This declares Cargo source identity, not another fetch authority or a broader
+dependency trust exception.
 
 `validate-family.sh` validates these constraints, committed dependency boundaries,
 required member metadata, and full-SHA action pins. `--checkouts` also requires

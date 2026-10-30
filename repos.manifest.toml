@@ -166,6 +166,7 @@ ci = "npm ci && npm run build && npm test"
 
 [[repo]]
 name = "jankurai-tools-kernel"
+cargo_source_aliases = ["https://www.github.com/neverhuman/jankurai-tools-kernel.git", "https://git.jeryu.ai/git/root/jankurai-tools-kernel"]
 path = "jankurai-tools-kernel"
 slug = "root/jankurai-tools-kernel"
 default_branch = "main"

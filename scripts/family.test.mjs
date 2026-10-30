@@ -36,7 +36,10 @@ function fixture(t, member = 'jankurai-core') {
   return { root, hub, repo, sha, family };
 }
 test('fusion resolves forge and historical kernel routes to the same family source', t => {
-  const { repo, family } = fixture(t, 'jankurai-tools-kernel');
+  const { hub, repo } = fixture(t, 'jankurai-tools-kernel');
+  const sourceManifest = path.join(hub, 'repos.manifest.toml');
+  fs.appendFileSync(sourceManifest, 'cargo_source_aliases = ["https://www.github.com/neverhuman/jankurai-tools-kernel.git", "https://git.jeryu.ai/git/root/jankurai-tools-kernel"]\n');
+  const family = new Family(hub);
   const crate = path.join(repo, 'crates/kernel');
   fs.mkdirSync(crate, { recursive: true });
   fs.writeFileSync(path.join(repo, 'Cargo.toml'), '[workspace]\nmembers = ["crates/kernel"]\n');
@@ -54,6 +57,11 @@ test('fusion resolves forge and historical kernel routes to the same family sour
     assert.equal(fs.realpathSync(path.resolve(family.fusion, patched)), crate);
   }
   assert.equal(manifest.workspace.members.length, 1);
+  family.repos[1].cargo_source_aliases.push('https://untrusted.invalid/kernel');
+  assert.throws(() => family.validate(), /kernel-only migration contract/);
+  family.repos[1].cargo_source_aliases.pop();
+  family.repos[0].cargo_source_aliases = family.repos[1].cargo_source_aliases;
+  assert.throws(() => family.validate(), /kernel-only migration contract/);
 });
 test('build bootstrap preserves dirty files and does not fetch existing heads', t => {
   const { repo, sha, family } = fixture(t);

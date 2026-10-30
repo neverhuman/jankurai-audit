@@ -60,6 +60,16 @@ export class Family {
         repo.hosted !== `${m.hosted_base_url}/git/${slug}.git`) throw new Error(`${repo.name}: expected relative canonical path and forge authority URL`);
     if (repo.github_slug !== mirrorSlug || repo.github !== `${m.mirror_base_url}/${mirrorSlug}.git`) throw new Error(`${repo.name}: expected the GitHub mirror URL`);
     if (repo.mirror_github !== true || repo.mirror_github_main !== true) throw new Error(`${repo.name}: the forge must mirror main to GitHub`);
+    if ('cargo_source_aliases' in repo) {
+      const allowed = repo.name === 'jankurai-tools-kernel' ? [
+        crateSource(m, repo).replace('https://github.com/', 'https://www.github.com/'),
+        `https://git.jeryu.ai/git/${slug}`,
+      ] : [];
+      if (!Array.isArray(repo.cargo_source_aliases) || allowed.length === 0 ||
+          JSON.stringify([...repo.cargo_source_aliases].sort()) !== JSON.stringify(allowed.sort())) {
+        throw new Error(`${repo.name}: cargo source aliases must match the kernel-only migration contract`);
+      }
+    }
     if ('legacy_jeryu' in repo) throw new Error(`${repo.name}: legacy_jeryu is retired`);
     if (repo.required_check !== `${repo.name}/required` || repo.default_branch !== 'main') throw new Error('invalid branch/check contract');
     if ('tag' in repo || 'commit' in repo) throw new Error('component revision pins belong only in family.lock');
@@ -147,13 +157,7 @@ export class Family {
         // Members' Cargo git routes still name the pre-rename repositories
         // (github.com/<public_owner>/<repo>.git, see docs/forge-authority.md),
         // so the fusion patches that source, not the mirror URL.
-        const sources = [crateSource(this.manifest, repo)];
-        // The 1.7.6 kernel source migration keeps one kernel in fusion while
-        // older member pins can still name its historical GitHub route.
-        if (repo.name === 'jankurai-tools-kernel') {
-          sources.push(sources[0].replace('https://github.com/', 'https://www.github.com/'));
-          sources.push('https://git.jeryu.ai/git/root/jankurai-tools-kernel');
-        }
+        const sources = [crateSource(this.manifest, repo), ...(repo.cargo_source_aliases ?? [])];
         for (const source of sources) {
           if (!patches.has(source)) patches.set(source, []);
           patches.get(source).push([name, relative]);
