@@ -1,17 +1,17 @@
 # Install Jankurai
 
 The current published release is
-[v1.7.5](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.5).
-It provides native Linux x86-64 binaries, and Apple Silicon macOS binaries when
-the release lists them (they are built on a separate macOS build host).
+[v1.7.6](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.6).
+It provides native Linux x86-64 binaries. This release has no macOS assets;
+Apple Silicon builds require a separate macOS build host.
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.5/jankurai-installer.sh | bash -s -- --tag v1.7.5'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.6/jankurai-installer.sh | bash -s -- --tag v1.7.6'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
 ```
 
-The result is `jankurai 1.7.5`. The default directory is `~/.local/bin`; add the
+The result is `jankurai 1.7.6`. The default directory is `~/.local/bin`; add the
 PATH line to `~/.bashrc` or `~/.zshrc` if needed. Pass `--install-dir /your/bin`
 to select a different writable directory. No sudo, Rust, Node.js, GitHub login,
 or preinstalled verifier is needed for the auditor or Tuiwright. The platform
@@ -57,16 +57,16 @@ authorization.
 ## Tuiwright
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.5/jankurai-installer.sh | bash -s -- --tag v1.7.5 --product tuiwright'
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.6/jankurai-installer.sh | bash -s -- --tag v1.7.6 --product tuiwright'
 tuiwright --version
 ```
 
-Expected: `tuiwright 1.7.5`. Remove it with
+Expected: `tuiwright 1.7.6`. Remove it with
 `rm ~/.local/bin/tuiwright`.
 
 ## UX package
 
-The built `jankurai-ux-qa-1.7.5.tgz` is attached to the release. Browser auditing
+The built `jankurai-ux-qa-1.7.6.tgz` is attached to the release. Browser auditing
 requires Node.js 24, npm, Playwright 1.59.1, and Chromium. This optional package's
 manual verification uses [cosign 3.1.3](https://github.com/sigstore/cosign/releases/tag/v3.1.3)
 and [jq 1.8.2](https://github.com/jqlang/jq/releases/tag/jq-1.8.2). Install them
@@ -80,8 +80,8 @@ platform-independent npm asset:
 
 ```bash
 set -euo pipefail
-base=https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.5
-package=jankurai-ux-qa-1.7.5.tgz
+base=https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.6
+package=jankurai-ux-qa-1.7.6.tgz
 provenance=provenance-x86_64-unknown-linux-gnu.json
 key=jankurai-release-2026.pub
 curl --proto '=https' --tlsv1.2 -fsSL "$base/jankurai-installer.sh" -o installer.sh
@@ -97,7 +97,7 @@ for file in "$package" "$provenance"; do
   cosign verify-blob "$file" --bundle "$file.cosign.bundle" --key "$key" \
     --insecure-ignore-tlog=true --offline=true
 done
-jq -e '.schema == "jankurai.release/v2" and .tag == "v1.7.5"' "$provenance"
+jq -e '.schema == "jankurai.release/v2" and .tag == "v1.7.6"' "$provenance"
 ```
 
 Compare the pin with the installer in the hub repository on `main` as well as the
@@ -109,13 +109,13 @@ documentation describes; the installer handles both by itself.
 Only after every verification command succeeds:
 
 ```sh
-npm install -g ./jankurai-ux-qa-1.7.5.tgz playwright@1.59.1
+npm install -g ./jankurai-ux-qa-1.7.6.tgz playwright@1.59.1
 npx playwright@1.59.1 install chromium
 jankurai-ux-qa --version
 jankurai-ux-qa audit --url https://example.com --out ux-report.json
 ```
 
-Expected: `jankurai-ux-qa 1.7.5`. Remove it with
+Expected: `jankurai-ux-qa 1.7.6`. Remove it with
 `npm uninstall -g @jankurai/ux-qa`; remove Playwright separately if unused.
 
 ## Verification and source builds

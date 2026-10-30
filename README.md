@@ -26,7 +26,7 @@ and the integration job is what builds the fused auditor. The check is static
 policy and structure. Application pentests, cloud IAM, Terraform or Kubernetes
 posture, and runtime authorization are outside it.
 
-[**Current release v1.7.5**](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.5)
+[**Current release v1.7.6**](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.6)
 · [Install](docs/install.md)
 · [AGENTS.md](AGENTS.md)
 
@@ -58,13 +58,13 @@ The locked auditor's rule catalog is
 
 ## Install
 
-Linux x86-64 and Apple Silicon macOS:
+The v1.7.6 release provides Linux x86-64 binaries:
 
 ```sh
 bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.6/jankurai-installer.sh | bash -s -- --tag v1.7.6'
 export PATH="$HOME/.local/bin:$PATH"
 jankurai --version
-# jankurai 1.7.5
+# jankurai 1.7.6
 jankurai audit .
 ```
 
@@ -74,7 +74,7 @@ signatures and attestations), and embedded provenance, then runs the staged
 binary before replacing an existing install. Native Windows, Intel macOS, Linux ARM64, and Alpine/musl are not
 supported.
 
-`v1.7.5` includes `jankurai init`, a pre-commit that runs `diff-audit`, and
+`v1.7.6` includes `jankurai init`, a pre-commit that runs `diff-audit`, and
 `jankurai upgrade`. Install with the command above and audit locally or in CI.
 
 ## GitHub Action
@@ -90,7 +90,7 @@ installs `v1.7.1`, and omitting `fail-under` uses 85. Leave `plan` empty.
 - uses: neverhuman/jankurai-action@6cd9cbfdd503431ea33278a7444ff8f1772f3115
   id: quality
   with:
-    release-tag: v1.7.5
+    release-tag: v1.7.6
     fail-under: '85'
 - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
   if: always()

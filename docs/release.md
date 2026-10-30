@@ -3,8 +3,10 @@
 Releases are built and signed on our own build hosts and published to GitHub,
 which is only the publishing mirror. Nothing runs on GitHub Actions. `VERSION`,
 the auditor version, the Tuiwright version and the UX npm package version must
-agree. The source release candidate is `v1.7.6`; the latest published release is
-`v1.7.5` until the owner completes signing and publication. `v1.7.2` was the first key-signed release.
+agree. The latest published release is
+[`v1.7.6`](https://github.com/neverhuman/jankurai-audit/releases/tag/v1.7.6),
+published on 2026-10-30 with Linux x86-64 binaries. `v1.7.2` was the first
+key-signed release.
 
 | Tags | Built by | Signed with | The installer verifies |
 | --- | --- | --- | --- |
@@ -58,11 +60,14 @@ command above is the generation step; the build and publisher do not run it.
 
 ### Every release
 
-For the 1.7.6 candidate, the installer and Action defaults remain on published
-`v1.7.5`, matching deploy's verified vendored installer. Use `--tag v1.7.6`
-explicitly for staged verification and installation after publication. The
-bounded Action allowance expires on 2026-11-14; publishing alone does not
-change any host's governed auditor.
+For the published v1.7.6 release, pass `--tag v1.7.6` explicitly. The immutable
+installer asset and the currently locked member Action still default to
+published `v1.7.5`, matching deploy's vendored installer. The examples below
+select v1.7.6 explicitly. The source pin retains its bounded previous-Action
+allowance until those defaults move together; its expiry remains 2026-11-14.
+That outstanding source migration does not mean the release is unpublished.
+Publication alone does not change a host's governed auditor: promotion follows
+the protected `jeryu-tool` manifest and the signature-verifying installer.
 
 The tag must already exist on the forge and on the GitHub mirror. Tags are
 immutable. Never move one.
@@ -300,8 +305,8 @@ coverage is refused.
 ## Installation
 
 ```sh
-bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.5/jankurai-installer.sh | bash -s -- --tag v1.7.5'
-bash jankurai-installer.sh --tag v1.7.5 --product tuiwright
+bash -o pipefail -c 'curl --proto "=https" --tlsv1.2 -fsSL https://github.com/neverhuman/jankurai-audit/releases/download/v1.7.6/jankurai-installer.sh | bash -s -- --tag v1.7.6'
+bash jankurai-installer.sh --tag v1.7.6 --product tuiwright
 ```
 
 The installer downloads temporary cosign and jq binaries at exact versions and
